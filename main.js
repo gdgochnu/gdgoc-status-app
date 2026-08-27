@@ -374,7 +374,7 @@ async function reportMissingTask(b64Data, btn) {
         
         const params = new URLSearchParams({
             action: 'reportMissingTask',
-            nid: searchInput.value.trim(),
+            nid: nationalIdInput.value.trim(),
             name: app.name,
             email: app.email || '',
             team: app.type,
