@@ -384,7 +384,7 @@ async function reportMissingTask(b64Data, btn) {
             method: 'POST',
             body: JSON.stringify(payload),
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'text/plain;charset=utf-8'
             }
         });
 
