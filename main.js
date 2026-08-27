@@ -407,6 +407,7 @@ function renderResults(results) {
             } else if (i === s.pipeline) {
                 if (s.state === 'fail') pClass = 'pipe-step fail';
                 else if (s.state === 'wait') pClass = 'pipe-step active wait';
+                else if (s.state === 'success') pClass = 'pipe-step done';
                 else pClass = 'pipe-step active';
             }
             
