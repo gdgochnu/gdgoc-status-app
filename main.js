@@ -283,7 +283,9 @@ function renderResults(results) {
             
             pipeHtml += `
                 <div class="pipe-node-wrap">
-                    <div class="${pClass}"></div>
+                    <div class="${pClass}">
+                        <i class="pipe-icon"></i>
+                    </div>
                     <span class="pipe-label">${labels[i-1]}</span>
                 </div>
             `;
