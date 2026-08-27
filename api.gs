@@ -38,6 +38,50 @@ function doGet(e) {
   try {
     const nationalId = e.parameter.nid;
 
+
+    // --- Missing Task Action ---
+    if (e.parameter.action === 'reportMissingTask') {
+      try {
+        const ss = SpreadsheetApp.openById(CONFIG.MISSING_TASK_SHEET_ID);
+        const sheet = ss.getSheets()[0];
+        
+        if (sheet.getLastRow() === 0) {
+          sheet.appendRow(['Timestamp', 'National ID', 'Name', 'Email', 'Team', 'Committee/Role', 'Status']);
+        }
+
+        const reqData = sheet.getDataRange().getValues();
+        let existing = false;
+        if (reqData.length > 1) {
+          const nIdx = reqData[0].findIndex(h => h.toString().includes('National ID'));
+          for (let i = 1; i < reqData.length; i++) {
+            if (reqData[i][nIdx] && reqData[i][nIdx].toString().trim() === e.parameter.nid.trim()) {
+              existing = true;
+              break;
+            }
+          }
+        }
+
+        if (existing) {
+          return createJsonResponse({ success: false, message: 'Request already submitted.' }, 200);
+        }
+
+        sheet.appendRow([
+          new Date(),
+          e.parameter.nid,
+          e.parameter.name,
+          e.parameter.email || 'N/A',
+          e.parameter.team,
+          e.parameter.role || 'N/A',
+          'قيد الانتظار'
+        ]);
+
+        return createJsonResponse({ success: true, message: 'Request submitted successfully.' }, 200);
+      } catch (err) {
+        return createJsonResponse({ error: 'Server error: ' + err.message }, 500);
+      }
+    }
+    // ---------------------------
+
     if (!nationalId) {
       return createJsonResponse({ error: 'Missing National ID parameter (nid).' }, 400);
     }
