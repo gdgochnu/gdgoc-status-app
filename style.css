@@ -44,6 +44,17 @@
   --font-family: 'Outfit', 'Cairo', sans-serif;
 }
 
+/* Custom Text Selection */
+::selection {
+  background: var(--g-yellow);
+  color: #060b14;
+}
+::-moz-selection {
+  background: var(--g-yellow);
+  color: #060b14;
+}
+
+
 /* ════════════════════════════════════════════════════
    Reset & Base Styles
 ════════════════════════════════════════════════════ */
