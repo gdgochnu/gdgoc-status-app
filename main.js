@@ -173,6 +173,8 @@ form.addEventListener('submit', async (e) => {
         }
 
         renderResults(data.data);
+        // Save ID for auto-fetch on next visit
+        localStorage.setItem('gdgoc_saved_nid', nationalId);
 
     } catch (error) {
         showError(error.message || "Failed to fetch data. Please check your internet connection.");
@@ -507,3 +509,19 @@ async function reportMissingTask(b64Data, btn) {
     }
 }
 
+
+
+// ==========================================
+// REMEMBER ME (Auto-Fetch)
+// ==========================================
+window.addEventListener('DOMContentLoaded', () => {
+    const savedNid = localStorage.getItem('gdgoc_saved_nid');
+    if (savedNid) {
+        nationalIdInput.value = savedNid;
+        // Small delay to ensure everything is ready, then submit
+        setTimeout(() => {
+            // Dispatch a submit event on the form so the submit listener catches it
+            form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+        }, 500);
+    }
+});
