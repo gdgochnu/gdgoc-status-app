@@ -115,6 +115,7 @@ function parseStatus(app) {
     let ini = app.initialStatus || 'قيد المراجعة';
     let tsk = app.taskStatus || '';
     let intv = app.interviewTime || '';
+    let decision = app.interviewDecision || '';
 
     // Default: Pending at Stage 1
     let s = { class: 'status-pending', icon: 'fa-spinner fa-spin-pulse', label: 'Under Initial Review', pipeline: 1, state: 'active' };
@@ -127,6 +128,17 @@ function parseStatus(app) {
     // Waitlist at initial
     if (ini.includes('انتظار') && !tsk) {
         return { class: 'status-waitlist', icon: 'fa-hourglass-half', label: 'Waitlisted', pipeline: 1, state: 'wait' };
+    }
+    
+    // Final Interview Decisions override everything else
+    if (decision === 'مقبول' || decision === 'مقبول نهائي' || ini === 'مقبول نهائي') {
+        return { class: 'status-accepted', icon: 'fa-check-double', label: 'Officially Accepted to the Core Team!', pipeline: 4, state: 'success' };
+    }
+    if (decision === 'مرفوض') {
+        return { class: 'status-rejected', icon: 'fa-ban', label: 'Rejected (Post-Interview)', pipeline: 3, state: 'fail', rejectMsg: true };
+    }
+    if (decision.includes('انتظار')) {
+        return { class: 'status-waitlist', icon: 'fa-hourglass-half', label: 'Waitlisted (Post-Interview)', pipeline: 3, state: 'wait' };
     }
 
     // 2. Task Phase
@@ -176,6 +188,10 @@ function parseStatus(app) {
         }
 
         if (!tsk) {
+             // If Non-Tech and no tasks, they are waiting for interview
+             if (app.type === 'Non-Tech') {
+                 return { class: 'status-accepted', icon: 'fa-hourglass-start', label: 'Initially Accepted (Awaiting Interview Schedule)', pipeline: 2, state: 'active' };
+             }
              return { class: 'status-task-sent', icon: 'fa-hourglass-start', label: 'Initially Accepted (Awaiting Tasks)', pipeline: 2, state: 'active' };
         }
     }

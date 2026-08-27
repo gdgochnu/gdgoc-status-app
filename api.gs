@@ -16,7 +16,8 @@ const CONFIG = {
     NON_TECH_COMMITTEE: "اختر اللجنة / الدور الذي ترغب في التقديم عليه:  ",
     STATUS: "حالة القبول", 
     TASK_STATUS: "حالة التاسك",
-    INTERVIEW_TIME: "موعد المقابلة" 
+    INTERVIEW_TIME: "موعد المقابلة",
+    INTERVIEW_DECISION: "قرار الإنترفيو" 
   }
 };
 
@@ -93,6 +94,7 @@ function searchSheet(spreadsheetId, searchId, type, committeeColName) {
   const statusIdx = getIndex(CONFIG.COLUMNS.STATUS);
   const taskStatusIdx = getIndex(CONFIG.COLUMNS.TASK_STATUS);
   const interviewTimeIdx = getIndex(CONFIG.COLUMNS.INTERVIEW_TIME);
+  const interviewDecisionIdx = getIndex(CONFIG.COLUMNS.INTERVIEW_DECISION);
 
   if (idIdx === -1) return []; // National ID column not found in this sheet
 
