@@ -12,6 +12,7 @@ const CONFIG = {
     NATIONAL_ID: "الرقم القومي :",
     NAME: "الاسم الرباعي كاملًا :",
     TECH_COMMITTEE: "التراك التقني الأساسي الذي تقدم عليه (Primary Track)",
+    TECH_ROLE: "الدور الذي ترغب في الانضمام به للتراك (Role Selection) :",
     NON_TECH_COMMITTEE: "اختر اللجنة / الدور الذي ترغب في التقديم عليه:  ",
     STATUS: "الحالة", // IMPORTANT: Add this column to your sheets if it doesn't exist
     INTERVIEW_TIME: "موعد المقابلة" // Optional: Add if you want to show interview times
@@ -90,6 +91,7 @@ function searchSheet(spreadsheetId, searchId, type, committeeColName) {
   const idIdx = getIndex(CONFIG.COLUMNS.NATIONAL_ID);
   const nameIdx = getIndex(CONFIG.COLUMNS.NAME);
   const committeeIdx = getIndex(committeeColName);
+  const roleIdx = type === 'Tech' ? getIndex(CONFIG.COLUMNS.TECH_ROLE) : -1;
   const statusIdx = getIndex(CONFIG.COLUMNS.STATUS);
   const interviewTimeIdx = getIndex(CONFIG.COLUMNS.INTERVIEW_TIME);
 
@@ -107,6 +109,7 @@ function searchSheet(spreadsheetId, searchId, type, committeeColName) {
         type: type,
         name: nameIdx !== -1 ? row[nameIdx] : 'مجهول',
         committee: committeeIdx !== -1 ? row[committeeIdx] : 'غير محدد',
+        role: roleIdx !== -1 ? row[roleIdx] : null,
         status: statusIdx !== -1 && row[statusIdx] ? row[statusIdx] : 'قيد المراجعة',
         interviewTime: interviewTimeIdx !== -1 && row[interviewTimeIdx] ? row[interviewTimeIdx] : null
       });
