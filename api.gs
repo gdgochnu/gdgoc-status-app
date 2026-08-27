@@ -108,16 +108,13 @@ function searchSheet(spreadsheetId, searchId, type, committeeColName) {
       let initialStatus = statusIdx !== -1 && row[statusIdx] ? String(row[statusIdx]).trim() : 'قيد المراجعة';
       let taskStatus = taskStatusIdx !== -1 && row[taskStatusIdx] ? String(row[taskStatusIdx]).trim() : '';
       
-      // Detailed status logic
-      // If there's a task status, it takes precedence as it represents a later stage in the pipeline
-      let finalStatus = taskStatus ? taskStatus : initialStatus;
-
       matches.push({
         type: type,
         name: nameIdx !== -1 ? row[nameIdx] : 'مجهول',
         committee: committeeIdx !== -1 ? row[committeeIdx] : 'غير محدد',
         role: roleIdx !== -1 ? row[roleIdx] : null,
-        status: finalStatus,
+        initialStatus: initialStatus,
+        taskStatus: taskStatus,
         interviewTime: interviewTimeIdx !== -1 && row[interviewTimeIdx] ? row[interviewTimeIdx] : null
       });
     }

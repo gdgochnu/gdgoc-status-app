@@ -186,19 +186,33 @@ body {
 
 /* Pipeline UI */
 .pipeline-tracker {
-  display: flex; align-items: center; padding: 12px 24px;
+  display: flex; align-items: center; justify-content: space-between; padding: 25px 24px 35px;
   background: rgba(0,0,0,0.15); border-bottom: 1px solid var(--panel-border);
 }
-.pipe-step {
-  width: 10px; height: 10px; border-radius: 50%;
-  background: var(--panel-border); flex-shrink: 0;
-  transition: all 0.3s ease;
+.pipe-node-wrap {
+  display: flex; flex-direction: column; align-items: center; position: relative; z-index: 2;
 }
-.pipe-step.done { background: var(--g-blue); box-shadow: 0 0 8px var(--g-blue-glow); }
-.pipe-step.active { background: var(--g-yellow); box-shadow: 0 0 10px rgba(251,188,5,0.4); animation: pulse 1.5s infinite; }
-.pipe-step.fail { background: var(--g-red); box-shadow: 0 0 8px rgba(234,67,53,0.4); }
-.pipe-line { flex: 1; height: 2px; background: var(--panel-border); transition: all 0.3s; }
+.pipe-step {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--panel-border); flex-shrink: 0;
+  transition: all 0.3s ease; border: 2px solid var(--card-bg);
+}
+.pipe-step.done { background: var(--g-blue); border-color: var(--g-blue-glow); box-shadow: 0 0 10px var(--g-blue-glow); }
+.pipe-step.active { background: var(--g-yellow); border-color: rgba(251,188,5,0.3); box-shadow: 0 0 12px rgba(251,188,5,0.5); animation: pulse 1.5s infinite; }
+.pipe-step.active.wait { background: var(--g-purple); border-color: rgba(168,85,247,0.3); box-shadow: 0 0 12px rgba(168,85,247,0.5); }
+.pipe-step.fail { background: var(--g-red); border-color: rgba(234,67,53,0.3); box-shadow: 0 0 12px rgba(234,67,53,0.5); }
+.pipe-label {
+  position: absolute; top: 22px; font-size: 11px; font-weight: 700; color: var(--text-muted);
+  white-space: nowrap; transition: color 0.3s;
+}
+.pipe-step.done ~ .pipe-label { color: var(--text-dim); }
+.pipe-step.active ~ .pipe-label { color: var(--g-yellow); }
+.pipe-step.active.wait ~ .pipe-label { color: var(--g-purple); }
+.pipe-step.fail ~ .pipe-label { color: var(--g-red); }
+
+.pipe-line { flex: 1; height: 3px; background: var(--panel-border); transition: all 0.3s; margin: 0 -5px; z-index: 1; position: relative; top: -10px; }
 .pipe-line.done { background: var(--g-blue); }
+.pipe-line.fail { background: linear-gradient(90deg, var(--panel-border), rgba(234,67,53,0.5)); }
 
 @keyframes pulse {
   0% { transform: scale(1); opacity: 1; }

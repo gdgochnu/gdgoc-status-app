@@ -111,30 +111,73 @@ function setLoading(isLoading) {
     }
 }
 
-function parseStatus(statusText) {
-    let s = { class: 'status-pending', icon: 'fa-spinner fa-spin-pulse', label: 'قيد المراجعة', pipeline: 1 };
-    if (!statusText) return s;
+function parseStatus(app) {
+    let ini = app.initialStatus || 'قيد المراجعة';
+    let tsk = app.taskStatus || '';
+    let intv = app.interviewTime || '';
 
-    // We categorize the detailed statuses
-    if (statusText.includes('مقبول') || statusText.includes('Accept')) {
-        s = { class: 'status-accepted', icon: 'fa-check-double', label: statusText, pipeline: 5 };
-    } else if (statusText.includes('مرفوض') || statusText.includes('Reject')) {
-        s = { class: 'status-rejected', icon: 'fa-ban', label: statusText, pipeline: 0 };
-    } else if (statusText.includes('مقابل') || statusText.includes('Interview')) {
-        s = { class: 'status-interview', icon: 'fa-comments', label: statusText, pipeline: 4 };
-    } else if (statusText.includes('انتظار') || statusText.includes('Waitlist')) {
-        s = { class: 'status-waitlist', icon: 'fa-hourglass-half', label: statusText, pipeline: 3 };
-    } else if (statusText.includes('إرسال التاسك') || statusText.includes('تاسك')) {
-        s = { class: 'status-task-sent', icon: 'fa-paper-plane', label: statusText, pipeline: 2 };
-    } else if (statusText.includes('تسليم التاسك')) {
-        s = { class: 'status-task-done', icon: 'fa-file-circle-check', label: statusText, pipeline: 3 };
-    } else if (statusText.includes('لم يقم') || statusText.includes('Not Done')) {
-        s = { class: 'status-rejected', icon: 'fa-xmark', label: statusText, pipeline: 0 };
-    } else {
-        // Fallback for custom statuses
-        s.label = statusText;
-        s.icon = 'fa-circle-info';
+    // Default: Pending at Stage 1
+    let s = { class: 'status-pending', icon: 'fa-spinner fa-spin-pulse', label: 'قيد المراجعة الأولية', pipeline: 1, state: 'active' };
+
+    // 1. Initial Review Rejection
+    if (ini.includes('مرفوض') && !tsk) {
+        return { class: 'status-rejected', icon: 'fa-ban', label: 'مرفوض (المراجعة الأولية)', pipeline: 1, state: 'fail' };
     }
+
+    // Waitlist at initial
+    if (ini.includes('انتظار') && !tsk) {
+        return { class: 'status-waitlist', icon: 'fa-hourglass-half', label: 'قائمة الانتظار', pipeline: 1, state: 'wait' };
+    }
+
+    // 2. Task Phase
+    if (tsk || ini.includes('مقبول') || ini.includes('مقابلة') || intv) {
+        
+        // Rejections in Task phase
+        if (tsk.includes('مرفوض') || tsk.includes('لم يقم') || tsk.includes('Not Done') || (ini.includes('مرفوض') && tsk)) {
+            return { class: 'status-rejected', icon: 'fa-xmark', label: 'مرفوض (مرحلة التاسك)', pipeline: 2, state: 'fail' };
+        }
+        
+        if (tsk.includes('إرسال') || tsk.includes('بانتظار')) {
+            return { class: 'status-task-sent', icon: 'fa-paper-plane', label: 'تم إرسال التاسك (بانتظار تسليمك)', pipeline: 2, state: 'active' };
+        }
+        
+        if (tsk.includes('تسليم')) {
+            return { class: 'status-task-done', icon: 'fa-file-circle-check', label: 'تم التسليم (جاري التقييم)', pipeline: 2, state: 'active' };
+        }
+        
+        if (tsk.includes('قُبل')) {
+            // Passed task! Now check interview
+            if (intv || ini.includes('مقابلة') || ini.includes('Interview')) {
+                return { class: 'status-interview', icon: 'fa-comments', label: 'دعوة للمقابلة الشخصية', pipeline: 3, state: 'active' };
+            } else if (ini.includes('مرفوض') && tsk.includes('قُبل')) {
+                // Passed task but rejected in interview
+                return { class: 'status-rejected', icon: 'fa-ban', label: 'مرفوض (بعد المقابلة)', pipeline: 3, state: 'fail' };
+            } else {
+                // Passed task, waiting for interview schedule
+                return { class: 'status-accepted', icon: 'fa-check', label: 'اجتاز التاسك (في انتظار موعد المقابلة)', pipeline: 3, state: 'wait' };
+            }
+        }
+
+        // Direct Interview (e.g. Non-Tech roles that don't have tasks)
+        if (intv || ini.includes('مقابلة') || ini.includes('Interview')) {
+            return { class: 'status-interview', icon: 'fa-comments', label: 'دعوة للمقابلة الشخصية', pipeline: 3, state: 'active' };
+        }
+
+        // Final Acceptance
+        if (ini === 'مقبول نهائي' || (ini.includes('مقبول') && (tsk === 'قُبل التاسك' || !tsk) && !ini.includes('مبدئي'))) {
+            // Wait, to distinguish final from initial "مقبول", we can check if there's a strong indicator.
+            // If they are just "مقبول" initially, we put them at stage 2.
+            if (!tsk && !intv && !ini.includes('نهائي')) {
+                return { class: 'status-task-sent', icon: 'fa-hourglass-start', label: 'مقبول مبدئياً (في انتظار المهام)', pipeline: 2, state: 'active' };
+            }
+            return { class: 'status-accepted', icon: 'fa-check-double', label: 'تم القبول بالفرع!', pipeline: 4, state: 'success' };
+        }
+
+        if (!tsk) {
+             return { class: 'status-task-sent', icon: 'fa-hourglass-start', label: 'مقبول مبدئياً (في انتظار المهام)', pipeline: 2, state: 'active' };
+        }
+    }
+
     return s;
 }
 
@@ -156,7 +199,7 @@ function renderResults(results) {
     resultsContainer.innerHTML = `<h3 class="results-title" style="margin-bottom: 15px; text-align: center; color: var(--text-dim); animation: fadeIn 0.5s ease;">عثرنا على ${results.length} طلب</h3>`;
 
     results.forEach((app, index) => {
-        const s = parseStatus(app.status);
+        const s = parseStatus(app);
         const typeColor = app.type === 'Tech' ? 'var(--g-blue)' : 'var(--g-green)';
         const typeIcon = app.type === 'Tech' ? 'fa-code' : 'fa-lightbulb';
 
@@ -172,7 +215,7 @@ function renderResults(results) {
         else if (s.class === 'status-waitlist') card.style.borderTop = "3px solid var(--g-yellow)";
 
         let interviewHtml = '';
-        if (app.interviewTime && (s.class === 'status-interview' || s.class === 'status-accepted')) {
+        if (app.interviewTime && (s.class === 'status-interview' || s.class === 'status-accepted' || s.state === 'wait')) {
             interviewHtml = `
                 <div class="interview-alert">
                     <div class="icon-wrapper"><i class="fa-solid fa-bell"></i></div>
@@ -196,21 +239,31 @@ function renderResults(results) {
             `;
         }
 
-        // Pipeline UI
-        const pipeSteps = 5;
+        // Pipeline UI (4 stages)
+        const pipeSteps = 4;
+        const labels = ['المراجعة', 'التاسك', 'المقابلة', 'النتيجة'];
         let pipeHtml = '<div class="pipeline-tracker">';
         for (let i = 1; i <= pipeSteps; i++) {
             let pClass = 'pipe-step';
-            if (s.pipeline === 0 && i > 1) {
-                // Rejected early
-                pClass = 'pipe-step'; 
-            } else if (i < s.pipeline) {
+            
+            if (i < s.pipeline) {
                 pClass = 'pipe-step done';
             } else if (i === s.pipeline) {
-                pClass = s.pipeline === 0 ? 'pipe-step fail' : 'pipe-step active';
+                if (s.state === 'fail') pClass = 'pipe-step fail';
+                else if (s.state === 'wait') pClass = 'pipe-step active wait';
+                else pClass = 'pipe-step active';
             }
-            pipeHtml += `<div class="${pClass}"></div>`;
-            if (i < pipeSteps) pipeHtml += `<div class="pipe-line ${i < s.pipeline ? 'done' : ''}"></div>`;
+            
+            pipeHtml += `
+                <div class="pipe-node-wrap">
+                    <div class="${pClass}"></div>
+                    <span class="pipe-label">${labels[i-1]}</span>
+                </div>
+            `;
+            
+            if (i < pipeSteps) {
+                pipeHtml += `<div class="pipe-line ${i < s.pipeline ? 'done' : (i === s.pipeline && s.state === 'fail' ? 'fail' : '')}"></div>`;
+            }
         }
         pipeHtml += '</div>';
 
@@ -228,7 +281,7 @@ function renderResults(results) {
                     ${s.label}
                 </div>
             </div>
-            ${s.pipeline > 0 ? pipeHtml : ''}
+            ${pipeHtml}
             <div class="card-body">
                 <div class="info-row">
                     <span class="info-label"><i class="fa-solid fa-layer-group"></i> اللجنة / التراك الأساسي</span>
