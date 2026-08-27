@@ -354,10 +354,13 @@ function renderResults(results) {
                 const b64Data = btoa(unescape(encodeURIComponent(JSON.stringify(app))));
                 missingTaskHtml = `
                     <div class="missing-task-action">
-                        <p>Didn't receive the task email?</p>
-                        <button class="btn-missing-task" onclick="reportMissingTask('${b64Data}', this)">
-                            <i class="fa-solid fa-envelope-open-text"></i> Report Missing Task
-                        </button>
+                        <p style="margin-bottom: 8px; font-size: 13px;">Didn't receive the task email? Provide your correct email:</p>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <input type="email" id="correctEmail-${index}" class="form-control" style="flex: 1; min-width: 150px; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--panel-border); background: rgba(0,0,0,0.2); color: #fff; font-size: 13px;" placeholder="Correct Email Address" value="${app.email || ''}">
+                            <button class="btn-missing-task" onclick="reportMissingTask('${b64Data}', this, 'correctEmail-${index}')" style="margin: 0; padding: 8px 15px; flex-shrink: 0;">
+                                <i class="fa-solid fa-paper-plane"></i> Send
+                            </button>
+                        </div>
                     </div>
                 `;
             }
@@ -474,7 +477,7 @@ function showError(message) {
 
 
 
-async function reportMissingTask(b64Data, btn) {
+async function reportMissingTask(b64Data, btn, inputId) {
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
     
@@ -485,7 +488,7 @@ async function reportMissingTask(b64Data, btn) {
             action: 'reportMissingTask',
             nid: nationalIdInput.value.trim(),
             name: app.name,
-            email: app.email || '',
+            email: document.getElementById(inputId).value.trim() || app.email || '',
             team: app.type,
             role: app.role || app.committee
         });
