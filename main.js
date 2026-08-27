@@ -370,6 +370,20 @@ function renderResults(results) {
             `;
         }
 
+        
+        let easterEggHtml = '';
+        if (app.type === 'Tech' && s.class === 'status-accepted') {
+            easterEggHtml = `
+                <div class="tech-easter-egg">
+                    <div class="terminal-text">
+                        <p>> INITIALIZING PROTOCOLS...</p>
+                        <p>> VERIFYING TECH SKILLS...</p>
+                        <p class="success">> ACCESS GRANTED. WELCOME.</p>
+                    </div>
+                </div>
+            `;
+        }
+
         // Role Info
         let roleHtml = '';
         if (app.type === 'Tech' && app.role && app.role !== 'null') {
@@ -412,6 +426,7 @@ function renderResults(results) {
         pipeHtml += '</div>';
 
         card.innerHTML = `
+            ${easterEggHtml}
             <div class="card-header">
                 <div class="applicant-info">
                     <h3 style="font-family: 'Outfit', 'Cairo', sans-serif;">${app.name}</h3>

@@ -374,3 +374,32 @@ footer { text-align: center; padding: 20px; color: var(--text-muted); font-size:
 .btn-missing-task:hover:not(:disabled) { background: rgba(255,255,255,0.05); border-color: var(--text-muted); }
 .btn-missing-task:disabled { opacity: 0.7; cursor: not-allowed; }
 .btn-missing-task.btn-success { background: rgba(52,168,83,0.1); border-color: var(--g-green); color: var(--g-green); }
+
+
+/* Easter Egg: Tech Terminal */
+.tech-easter-egg {
+  position: absolute; inset: 0; background: rgba(10, 15, 25, 0.95);
+  backdrop-filter: blur(10px); z-index: 50; border-radius: 12px;
+  display: flex; flex-direction: column; justify-content: center; padding: 30px;
+  animation: fadeOutEgg 0.5s ease 3.5s forwards;
+  pointer-events: none;
+  font-family: 'Courier New', Courier, monospace;
+}
+.terminal-text p {
+  color: #0f0; margin: 5px 0; font-size: 14px; font-weight: bold;
+  opacity: 0; overflow: hidden; white-space: nowrap;
+}
+.terminal-text p:nth-child(1) { animation: typeLine 0.5s steps(30, end) 0.5s forwards; }
+.terminal-text p:nth-child(2) { animation: typeLine 0.5s steps(30, end) 1.5s forwards; }
+.terminal-text p.success { color: #0ff; text-shadow: 0 0 10px #0ff; animation: typeLine 0.5s steps(30, end) 2.5s forwards, blinkCursor 0.5s step-end infinite; }
+
+@keyframes typeLine {
+  from { width: 0; opacity: 1; }
+  to { width: 100%; opacity: 1; }
+}
+@keyframes blinkCursor {
+  50% { border-right: 2px solid transparent; }
+}
+@keyframes fadeOutEgg {
+  to { opacity: 0; visibility: hidden; }
+}
