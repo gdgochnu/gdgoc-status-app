@@ -246,6 +246,31 @@ function renderResults(results) {
             `;
         }
         
+                let missingTaskHtml = '';
+        if (s.class === 'status-task-sent' || (app.type === 'Non-Tech' && s.class === 'status-accepted' && s.pipeline === 2)) { 
+            if (app.missingTaskStatus) {
+                let bClass = app.missingTaskStatus.includes('انتظار') ? 'badge-warning' : 'badge-success';
+                missingTaskHtml = `
+                    <div class="missing-task-alert">
+                        <div class="alert-content">
+                            <strong><i class="fa-solid fa-circle-info"></i> Request Submitted</strong>
+                            <span class="sub-alert">Your request is: <span class="badge ${bClass}">${app.missingTaskStatus}</span></span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                const b64Data = btoa(unescape(encodeURIComponent(JSON.stringify(app))));
+                missingTaskHtml = `
+                    <div class="missing-task-action">
+                        <p>Didn't receive the task email?</p>
+                        <button class="btn-missing-task" onclick="reportMissingTask('${b64Data}', this)">
+                            <i class="fa-solid fa-envelope-open-text"></i> Report Missing Task
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
         let rejectionHtml = '';
         if (s.rejectMsg) {
             rejectionHtml = `
@@ -319,6 +344,7 @@ function renderResults(results) {
                 ${roleHtml}
                 ${interviewHtml}
                 ${rejectionHtml}
+                ${missingTaskHtml}
             </div>
         `;
 
@@ -335,4 +361,46 @@ function showError(message) {
             <p style="font-weight: 600; font-size: 15px;">${message}</p>
         </div>
     `;
+}
+
+
+async function reportMissingTask(b64Data, btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+    
+    try {
+        const app = JSON.parse(decodeURIComponent(escape(atob(b64Data))));
+        
+        const payload = {
+            action: 'reportMissingTask',
+            nid: searchInput.value.trim(),
+            name: app.name,
+            email: app.email || '',
+            team: app.type,
+            role: app.role || app.committee
+        };
+
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Submitted';
+            btn.classList.add('btn-success');
+            setTimeout(() => searchBtn.click(), 1000); // refresh
+        } else {
+            alert(result.message || 'Error submitting request');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-envelope-open-text"></i> Report Missing Task';
+        }
+    } catch (e) {
+        alert('Network error. Please try again later.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-envelope-open-text"></i> Report Missing Task';
+    }
 }

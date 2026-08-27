@@ -309,3 +309,34 @@ footer { text-align: center; padding: 20px; color: var(--text-muted); font-size:
   .card-header { flex-direction: column; gap: 15px; }
   .status-badge { align-self: flex-start; }
 }
+
+
+.missing-task-alert {
+  background: rgba(251,188,5,0.1); border-left: 3px solid var(--g-yellow);
+  border-radius: var(--radius-sm); padding: 12px 15px; margin-top: 15px; display: flex; align-items: flex-start; gap: 12px;
+}
+.missing-task-alert .alert-content { display: flex; flex-direction: column; gap: 4px; }
+.missing-task-alert strong { font-size: 14px; font-weight: 700; color: var(--text-main); }
+.missing-task-alert .sub-alert { font-size: 13px; font-weight: 500; color: var(--text-dim); }
+.missing-task-alert .badge {
+  padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; margin-left: 5px;
+}
+.missing-task-alert .badge-warning { background: rgba(251,188,5,0.2); color: var(--g-yellow); }
+.missing-task-alert .badge-success { background: rgba(52,168,83,0.2); color: var(--g-green); }
+
+.missing-task-action {
+  background: rgba(0,0,0,0.15); border-radius: var(--radius-md); padding: 15px; margin-top: 15px;
+  display: flex; align-items: center; justify-content: space-between; gap: 15px;
+  border: 1px dashed var(--panel-border);
+}
+.missing-task-action p {
+  margin: 0; font-size: 13px; font-weight: 600; color: var(--text-dim);
+}
+.btn-missing-task {
+  background: var(--card-bg); color: var(--text-main); border: 1px solid var(--panel-border);
+  padding: 8px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; font-family: var(--font-family);
+  cursor: pointer; transition: var(--transition); display: flex; align-items: center; gap: 6px;
+}
+.btn-missing-task:hover:not(:disabled) { background: rgba(255,255,255,0.05); border-color: var(--text-muted); }
+.btn-missing-task:disabled { opacity: 0.7; cursor: not-allowed; }
+.btn-missing-task.btn-success { background: rgba(52,168,83,0.1); border-color: var(--g-green); color: var(--g-green); }
