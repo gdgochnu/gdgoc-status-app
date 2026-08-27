@@ -196,23 +196,24 @@ body {
   animation: popNode 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 .pipe-step {
-  width: 32px; height: 32px; border-radius: 50%;
-  background: rgba(28, 43, 64, 0.5); flex-shrink: 0;
+  width: 42px; height: 42px; border-radius: 50%;
+  background: rgba(28, 43, 64, 0.7); flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); 
-  border: 2px solid var(--card-bg);
+  border: 3px solid var(--card-bg);
   position: relative; z-index: 2;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 .pipe-step::before {
-  content: ''; position: absolute; inset: -4px; border-radius: 50%;
-  border: 1px solid transparent; transition: all 0.4s;
+  content: ''; position: absolute; inset: -5px; border-radius: 50%;
+  border: 2px solid transparent; transition: all 0.4s;
 }
 .pipe-icon {
   font-family: "Font Awesome 6 Free"; font-weight: 900;
-  font-size: 13px; opacity: 0.5; color: var(--text-muted); transition: all 0.4s;
+  font-size: 15px; opacity: 0.4; color: #8fa8c8; transition: all 0.4s;
 }
-.pipe-step .pipe-icon::before { content: "\f111"; font-size: 7px; } /* circle */
-.pipe-step.done .pipe-icon::before { content: "\f00c"; font-size: 13px; } /* check */
+.pipe-step .pipe-icon::before { content: "\f111"; font-size: 9px; } /* circle */
+.pipe-step.done .pipe-icon::before { content: "\f00c"; font-size: 16px; } /* check */
 .pipe-step.active .pipe-icon::before { content: "\f110"; font-size: 13px; } /* spinner */
 .pipe-step.active .pipe-icon { animation: spin 2s linear infinite; }
 .pipe-step.active.wait .pipe-icon::before { content: "\f252"; font-size: 13px; } /* hourglass */
@@ -220,24 +221,40 @@ body {
 .pipe-step.fail .pipe-icon::before { content: "\f00d"; font-size: 14px; } /* xmark */
 
 /* Done State */
-.pipe-step.done { background: var(--g-blue); border-color: rgba(66,133,244,0.3); box-shadow: 0 0 15px rgba(66,133,244,0.4); }
+.pipe-step.done { 
+  background: linear-gradient(135deg, var(--g-blue), #1e4599); 
+  border-color: rgba(66,133,244,0.4); 
+  box-shadow: 0 0 20px rgba(66,133,244,0.5); 
+}
 .pipe-step.done .pipe-icon { opacity: 1; color: #fff; }
-.pipe-step.done::before { border-color: rgba(66,133,244,0.3); transform: scale(1.15); }
+.pipe-step.done::before { border-color: rgba(66,133,244,0.25); transform: scale(1.15); }
 
 /* Active State */
-.pipe-step.active { background: rgba(251,188,5,0.15); border-color: var(--g-yellow); }
+.pipe-step.active { 
+  background: linear-gradient(135deg, rgba(251,188,5,0.2), rgba(251,188,5,0.05)); 
+  border-color: var(--g-yellow); 
+  box-shadow: 0 0 20px rgba(251,188,5,0.25); 
+}
 .pipe-step.active .pipe-icon { opacity: 1; color: var(--g-yellow); }
-.pipe-step.active::before { border-color: rgba(251,188,5,0.5); animation: pulse-ring 2s infinite; }
+.pipe-step.active::before { border-color: rgba(251,188,5,0.6); animation: pulse-ring 2s infinite; }
 
 /* Wait State */
-.pipe-step.active.wait { background: rgba(168,85,247,0.15); border-color: var(--g-purple); }
+.pipe-step.active.wait { 
+  background: linear-gradient(135deg, rgba(168,85,247,0.2), rgba(168,85,247,0.05)); 
+  border-color: var(--g-purple); 
+  box-shadow: 0 0 20px rgba(168,85,247,0.25); 
+}
 .pipe-step.active.wait .pipe-icon { color: var(--g-purple); opacity: 1; }
-.pipe-step.active.wait::before { border-color: rgba(168,85,247,0.5); animation: pulse-ring 2.5s infinite; }
+.pipe-step.active.wait::before { border-color: rgba(168,85,247,0.6); animation: pulse-ring 2.5s infinite; }
 
 /* Fail State */
-.pipe-step.fail { background: rgba(234,67,53,0.15); border-color: var(--g-red); box-shadow: 0 0 15px rgba(234,67,53,0.3); }
+.pipe-step.fail { 
+  background: linear-gradient(135deg, rgba(234,67,53,0.2), rgba(234,67,53,0.05)); 
+  border-color: var(--g-red); 
+  box-shadow: 0 0 20px rgba(234,67,53,0.3); 
+}
 .pipe-step.fail .pipe-icon { opacity: 1; color: var(--g-red); }
-.pipe-step.fail::before { border-color: rgba(234,67,53,0.4); transform: scale(1.15); }
+.pipe-step.fail::before { border-color: rgba(234,67,53,0.5); transform: scale(1.15); }
 
 @keyframes pulse-ring {
   0% { transform: scale(1); opacity: 0.8; }
@@ -245,22 +262,24 @@ body {
 }
 
 .pipe-label {
-  position: absolute; top: 44px; font-size: 12px; font-weight: 700; color: var(--text-muted);
-  white-space: nowrap; transition: color 0.3s;
+  position: absolute; top: 54px; font-size: 13px; font-weight: 700; color: #6b829f;
+  white-space: nowrap; transition: all 0.3s;
+  padding: 4px 10px; border-radius: 12px;
 }
 .pipe-step.done ~ .pipe-label { color: #d0dbe8; }
-.pipe-step.active ~ .pipe-label { color: var(--g-yellow); }
-.pipe-step.active.wait ~ .pipe-label { color: var(--g-purple); }
-.pipe-step.fail ~ .pipe-label { color: var(--g-red); }
+.pipe-step.active ~ .pipe-label { color: var(--g-yellow); background: rgba(251,188,5,0.1); border: 1px solid rgba(251,188,5,0.2); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.pipe-step.active.wait ~ .pipe-label { color: var(--g-purple); background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.2); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.pipe-step.fail ~ .pipe-label { color: var(--g-red); background: rgba(234,67,53,0.1); border: 1px solid rgba(234,67,53,0.2); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
 
 .pipe-line { 
-  flex: 1; height: 4px; background: var(--panel-border); transition: all 0.5s; 
-  margin: 0 -12px; z-index: 1; position: relative; border-radius: 4px;
+  flex: 1; height: 6px; background: rgba(28, 43, 64, 0.8); transition: all 0.5s; 
+  margin: 0 -16px; z-index: 1; position: relative; border-radius: 6px;
   opacity: 0; transform-origin: left;
   animation: drawLine 0.4s ease-out forwards;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
 }
-.pipe-line.done { background: var(--g-blue); box-shadow: 0 0 8px rgba(66,133,244,0.5); }
-.pipe-line.fail { background: linear-gradient(90deg, var(--g-blue), rgba(234,67,53,0.6)); }
+.pipe-line.done { background: linear-gradient(90deg, var(--g-blue), #4285f4); box-shadow: 0 0 12px rgba(66,133,244,0.6); border: 1px solid rgba(66,133,244,0.3); }
+.pipe-line.fail { background: linear-gradient(90deg, var(--g-blue), var(--g-red)); box-shadow: 0 0 10px rgba(234,67,53,0.4); }
 
 @keyframes popNode {
   0% { transform: scale(0); opacity: 0; }
