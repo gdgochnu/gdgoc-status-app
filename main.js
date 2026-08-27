@@ -299,7 +299,7 @@ function renderResults(results) {
         card.innerHTML = `
             <div class="card-header">
                 <div class="applicant-info">
-                    <h3>${app.name}</h3>
+                    <h3 style="font-family: 'Outfit', 'Cairo', sans-serif;">${app.name}</h3>
                     <div class="applicant-type" style="color: ${typeColor}; background: ${typeColor}15; border: 1px solid ${typeColor}40;">
                         <i class="fa-solid ${typeIcon}"></i>
                         ${app.type} Team
