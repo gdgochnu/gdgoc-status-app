@@ -307,7 +307,7 @@ function renderResults(results) {
             }
             
             pipeHtml += `
-                <div class="pipe-node-wrap">
+                <div class="pipe-node-wrap" style="animation-delay: ${(i - 1) * 0.25}s">
                     <div class="${pClass}">
                         <i class="pipe-icon"></i>
                     </div>
@@ -316,7 +316,7 @@ function renderResults(results) {
             `;
             
             if (i < pipeSteps) {
-                pipeHtml += `<div class="pipe-line ${i < s.pipeline ? 'done' : (i === s.pipeline && s.state === 'fail' ? 'fail' : '')}"></div>`;
+                pipeHtml += `<div class="pipe-line ${i < s.pipeline ? 'done' : (i === s.pipeline && s.state === 'fail' ? 'fail' : '')}" style="animation-delay: ${((i - 1) * 0.25) + 0.15}s"></div>`;
             }
         }
         pipeHtml += '</div>';

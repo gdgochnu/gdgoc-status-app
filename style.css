@@ -192,6 +192,8 @@ body {
 }
 .pipe-node-wrap {
   display: flex; flex-direction: column; align-items: center; position: relative; z-index: 2;
+  opacity: 0;
+  animation: popNode 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 .pipe-step {
   width: 32px; height: 32px; border-radius: 50%;
@@ -254,9 +256,22 @@ body {
 .pipe-line { 
   flex: 1; height: 4px; background: var(--panel-border); transition: all 0.5s; 
   margin: 0 -12px; z-index: 1; position: relative; border-radius: 4px;
+  opacity: 0; transform-origin: left;
+  animation: drawLine 0.4s ease-out forwards;
 }
 .pipe-line.done { background: var(--g-blue); box-shadow: 0 0 8px rgba(66,133,244,0.5); }
 .pipe-line.fail { background: linear-gradient(90deg, var(--g-blue), rgba(234,67,53,0.6)); }
+
+@keyframes popNode {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes drawLine {
+  0% { transform: scaleX(0); opacity: 0; }
+  100% { transform: scaleX(1); opacity: 1; }
+}
 
 /* Card Body */
 .card-body { display: flex; flex-direction: column; gap: 15px; padding: 20px 24px 24px; }
