@@ -214,7 +214,7 @@ body {
 }
 .pipe-step .pipe-icon::before { content: "\f111"; font-size: 9px; } /* circle */
 .pipe-step.done .pipe-icon::before { content: "\f00c"; font-size: 16px; } /* check */
-.pipe-step.active .pipe-icon::before { content: "\f1ce"; font-size: 15px; } /* circle-notch */
+.pipe-step.active .pipe-icon::before { content: "\f110"; font-size: 15px; } /* spinner */
 .pipe-step.active .pipe-icon { animation: spin 1s linear infinite; }
 .pipe-step.active.wait .pipe-icon::before { content: "\f252"; font-size: 13px; } /* hourglass */
 .pipe-step.active.wait .pipe-icon { animation: none; }
