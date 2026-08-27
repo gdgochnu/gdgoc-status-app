@@ -1,5 +1,5 @@
 /**
- * GDGoC HNU Application Status Frontend - Enhanced
+ * GDGoC HNU Application Status Frontend - Enhanced (English)
  */
 
 // ==========================================
@@ -23,24 +23,24 @@ const resultsContainer = document.getElementById('resultsContainer');
 // VALIDATION
 // ==========================================
 function validateEgyptianNationalId(id) {
-    if (!/^\d{14}$/.test(id)) return "يجب أن يتكون الرقم القومي من 14 رقماً.";
+    if (!/^\d{14}$/.test(id)) return "National ID must be exactly 14 digits.";
     
     // Century (2 = 1900s, 3 = 2000s)
     const century = parseInt(id.charAt(0));
-    if (century !== 2 && century !== 3) return "تأكد من صحة الرقم الأول (قرن الميلاد).";
+    if (century !== 2 && century !== 3) return "Invalid century digit in National ID.";
 
     // Month
     const month = parseInt(id.substring(3, 5));
-    if (month < 1 || month > 12) return "تأكد من صحة شهر الميلاد في الرقم القومي.";
+    if (month < 1 || month > 12) return "Invalid birth month in National ID.";
 
     // Day
     const day = parseInt(id.substring(5, 7));
-    if (day < 1 || day > 31) return "تأكد من صحة يوم الميلاد في الرقم القومي.";
+    if (day < 1 || day > 31) return "Invalid birth day in National ID.";
 
     // Governorate
     const gov = parseInt(id.substring(7, 9));
     const validGovs = [1,2,3,4,11,12,13,14,15,16,17,18,19,21,22,23,24,25,26,27,28,29,31,32,33,34,35,88];
-    if (!validGovs.includes(gov)) return "تأكد من كود المحافظة في الرقم القومي.";
+    if (!validGovs.includes(gov)) return "Invalid governorate code in National ID.";
 
     return null; // Valid
 }
@@ -64,7 +64,7 @@ form.addEventListener('submit', async (e) => {
     }
 
     if (API_URL === "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE") {
-        showError("⚠️ لم يتم إعداد رابط الـ API. يرجى تحديث API_URL في ملف main.js.");
+        showError("⚠️ API URL is not set. Please update API_URL in main.js.");
         return;
     }
 
@@ -76,7 +76,7 @@ form.addEventListener('submit', async (e) => {
         const response = await fetch(`${API_URL}?nid=${encodeURIComponent(nationalId)}`);
         
         if (!response.ok) {
-            throw new Error('حدث خطأ في الاتصال بالخادم.');
+            throw new Error('Network error. Failed to connect to server.');
         }
 
         const data = await response.json();
@@ -88,7 +88,7 @@ form.addEventListener('submit', async (e) => {
         renderResults(data.data);
 
     } catch (error) {
-        showError(error.message || "فشل في جلب البيانات، تأكد من اتصالك بالإنترنت.");
+        showError(error.message || "Failed to fetch data. Please check your internet connection.");
     } finally {
         setLoading(false);
     }
@@ -117,16 +117,16 @@ function parseStatus(app) {
     let intv = app.interviewTime || '';
 
     // Default: Pending at Stage 1
-    let s = { class: 'status-pending', icon: 'fa-spinner fa-spin-pulse', label: 'قيد المراجعة الأولية', pipeline: 1, state: 'active' };
+    let s = { class: 'status-pending', icon: 'fa-spinner fa-spin-pulse', label: 'Under Initial Review', pipeline: 1, state: 'active' };
 
     // 1. Initial Review Rejection
     if (ini.includes('مرفوض') && !tsk) {
-        return { class: 'status-rejected', icon: 'fa-ban', label: 'مرفوض (المراجعة الأولية)', pipeline: 1, state: 'fail' };
+        return { class: 'status-rejected', icon: 'fa-ban', label: 'Rejected (Initial Review)', pipeline: 1, state: 'fail', rejectMsg: true };
     }
 
     // Waitlist at initial
     if (ini.includes('انتظار') && !tsk) {
-        return { class: 'status-waitlist', icon: 'fa-hourglass-half', label: 'قائمة الانتظار', pipeline: 1, state: 'wait' };
+        return { class: 'status-waitlist', icon: 'fa-hourglass-half', label: 'Waitlisted', pipeline: 1, state: 'wait' };
     }
 
     // 2. Task Phase
@@ -134,47 +134,46 @@ function parseStatus(app) {
         
         // Rejections in Task phase
         if (tsk.includes('مرفوض') || tsk.includes('لم يقم') || tsk.includes('Not Done') || (ini.includes('مرفوض') && tsk)) {
-            return { class: 'status-rejected', icon: 'fa-xmark', label: 'مرفوض (مرحلة التاسك)', pipeline: 2, state: 'fail' };
+            let label = tsk.includes('لم يقم') ? 'Rejected (Task Not Submitted)' : 'Rejected (Task Phase)';
+            return { class: 'status-rejected', icon: 'fa-xmark', label: label, pipeline: 2, state: 'fail', rejectMsg: true };
         }
         
         if (tsk.includes('إرسال') || tsk.includes('بانتظار')) {
-            return { class: 'status-task-sent', icon: 'fa-paper-plane', label: 'تم إرسال التاسك (بانتظار تسليمك)', pipeline: 2, state: 'active' };
+            return { class: 'status-task-sent', icon: 'fa-paper-plane', label: 'Task Sent (Awaiting Submission)', pipeline: 2, state: 'active' };
         }
         
         if (tsk.includes('تسليم')) {
-            return { class: 'status-task-done', icon: 'fa-file-circle-check', label: 'تم التسليم (جاري التقييم)', pipeline: 2, state: 'active' };
+            return { class: 'status-task-done', icon: 'fa-file-circle-check', label: 'Task Submitted (Under Review)', pipeline: 2, state: 'active' };
         }
         
         if (tsk.includes('قُبل')) {
             // Passed task! Now check interview
             if (intv || ini.includes('مقابلة') || ini.includes('Interview')) {
-                return { class: 'status-interview', icon: 'fa-comments', label: 'دعوة للمقابلة الشخصية', pipeline: 3, state: 'active' };
+                return { class: 'status-interview', icon: 'fa-comments', label: 'Invited for Interview', pipeline: 3, state: 'active' };
             } else if (ini.includes('مرفوض') && tsk.includes('قُبل')) {
                 // Passed task but rejected in interview
-                return { class: 'status-rejected', icon: 'fa-ban', label: 'مرفوض (بعد المقابلة)', pipeline: 3, state: 'fail' };
+                return { class: 'status-rejected', icon: 'fa-ban', label: 'Rejected (Post-Interview)', pipeline: 3, state: 'fail', rejectMsg: true };
             } else {
                 // Passed task, waiting for interview schedule
-                return { class: 'status-accepted', icon: 'fa-check', label: 'اجتاز التاسك (في انتظار موعد المقابلة)', pipeline: 3, state: 'wait' };
+                return { class: 'status-accepted', icon: 'fa-check', label: 'Task Accepted (Awaiting Interview Date)', pipeline: 3, state: 'wait' };
             }
         }
 
         // Direct Interview (e.g. Non-Tech roles that don't have tasks)
         if (intv || ini.includes('مقابلة') || ini.includes('Interview')) {
-            return { class: 'status-interview', icon: 'fa-comments', label: 'دعوة للمقابلة الشخصية', pipeline: 3, state: 'active' };
+            return { class: 'status-interview', icon: 'fa-comments', label: 'Invited for Interview', pipeline: 3, state: 'active' };
         }
 
         // Final Acceptance
         if (ini === 'مقبول نهائي' || (ini.includes('مقبول') && (tsk === 'قُبل التاسك' || !tsk) && !ini.includes('مبدئي'))) {
-            // Wait, to distinguish final from initial "مقبول", we can check if there's a strong indicator.
-            // If they are just "مقبول" initially, we put them at stage 2.
             if (!tsk && !intv && !ini.includes('نهائي')) {
-                return { class: 'status-task-sent', icon: 'fa-hourglass-start', label: 'مقبول مبدئياً (في انتظار المهام)', pipeline: 2, state: 'active' };
+                return { class: 'status-task-sent', icon: 'fa-hourglass-start', label: 'Initially Accepted (Awaiting Tasks)', pipeline: 2, state: 'active' };
             }
-            return { class: 'status-accepted', icon: 'fa-check-double', label: 'تم القبول بالفرع!', pipeline: 4, state: 'success' };
+            return { class: 'status-accepted', icon: 'fa-check-double', label: 'Officially Accepted to the Core Team!', pipeline: 4, state: 'success' };
         }
 
         if (!tsk) {
-             return { class: 'status-task-sent', icon: 'fa-hourglass-start', label: 'مقبول مبدئياً (في انتظار المهام)', pipeline: 2, state: 'active' };
+             return { class: 'status-task-sent', icon: 'fa-hourglass-start', label: 'Initially Accepted (Awaiting Tasks)', pipeline: 2, state: 'active' };
         }
     }
 
@@ -188,15 +187,15 @@ function renderResults(results) {
                 <div class="icon-circle" style="background: rgba(234,67,53,0.1); color: var(--g-red);">
                     <i class="fa-solid fa-file-circle-xmark"></i>
                 </div>
-                <h3>لا يوجد طلب بهذا الرقم</h3>
-                <p>عذراً، لم نتمكن من العثور على أي طلبات مسجلة بهذا الرقم القومي.</p>
-                <p style="font-size: 13px; color: var(--text-dim); margin-top: 5px;">تأكد من كتابة الرقم بشكل صحيح كما في استمارة التقديم.</p>
+                <h3>No Application Found</h3>
+                <p>Sorry, we couldn't find any application registered with this National ID.</p>
+                <p style="font-size: 13px; color: var(--text-dim); margin-top: 5px;">Make sure to write the ID exactly as in your submission form.</p>
             </div>
         `;
         return;
     }
 
-    resultsContainer.innerHTML = `<h3 class="results-title" style="margin-bottom: 15px; text-align: center; color: var(--text-dim); animation: fadeIn 0.5s ease;">عثرنا على ${results.length} طلب</h3>`;
+    resultsContainer.innerHTML = `<h3 class="results-title" style="margin-bottom: 15px; text-align: center; color: var(--text-dim); animation: fadeIn 0.5s ease;">Found ${results.length} Application(s)</h3>`;
 
     results.forEach((app, index) => {
         const s = parseStatus(app);
@@ -220,10 +219,19 @@ function renderResults(results) {
                 <div class="interview-alert">
                     <div class="icon-wrapper"><i class="fa-solid fa-bell"></i></div>
                     <div class="alert-content">
-                        <p>موعد المقابلة الخاص بك:</p>
+                        <p>Your Interview Schedule:</p>
                         <strong>${app.interviewTime}</strong>
-                        <span class="sub-alert">يرجى التواجد قبل الموعد بـ 10 دقائق.</span>
+                        <span class="sub-alert">Please be present 10 minutes prior to your time slot.</span>
                     </div>
+                </div>
+            `;
+        }
+        
+        let rejectionHtml = '';
+        if (s.rejectMsg) {
+            rejectionHtml = `
+                <div class="rejection-alert">
+                    <p>We received an overwhelming number of applications this year with exceptionally high competition. Unfortunately, we cannot move forward with your application at this time. We deeply appreciate your interest and wish you the best in your future endeavors!</p>
                 </div>
             `;
         }
@@ -233,7 +241,7 @@ function renderResults(results) {
         if (app.type === 'Tech' && app.role && app.role !== 'null') {
             roleHtml = `
                 <div class="info-row">
-                    <span class="info-label"><i class="fa-solid fa-user-gear"></i> الدور المطلوب (Role)</span>
+                    <span class="info-label"><i class="fa-solid fa-user-gear"></i> Applied Role</span>
                     <span class="info-value role-badge">${app.role}</span>
                 </div>
             `;
@@ -241,7 +249,7 @@ function renderResults(results) {
 
         // Pipeline UI (4 stages)
         const pipeSteps = 4;
-        const labels = ['المراجعة', 'التاسك', 'المقابلة', 'النتيجة'];
+        const labels = ['Review', 'Task', 'Interview', 'Final'];
         let pipeHtml = '<div class="pipeline-tracker">';
         for (let i = 1; i <= pipeSteps; i++) {
             let pClass = 'pipe-step';
@@ -284,11 +292,12 @@ function renderResults(results) {
             ${pipeHtml}
             <div class="card-body">
                 <div class="info-row">
-                    <span class="info-label"><i class="fa-solid fa-layer-group"></i> اللجنة / التراك الأساسي</span>
+                    <span class="info-label"><i class="fa-solid fa-layer-group"></i> Primary Track</span>
                     <span class="info-value">${app.committee}</span>
                 </div>
                 ${roleHtml}
                 ${interviewHtml}
+                ${rejectionHtml}
             </div>
         `;
 

@@ -1,39 +1,41 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GDGoC HNU - متابعة حالة الطلب</title>
+    <title>GDGoC HNU | Application Status</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" href="sitelogo.png" type="image/png">
+    
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
-    <!-- FontAwesome for Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Background Effects -->
+    
+    <!-- Ambient Background Shapes -->
     <div class="bg-shape shape-1"></div>
     <div class="bg-shape shape-2"></div>
     <div class="bg-shape shape-3"></div>
 
     <main class="container">
-        <!-- Header -->
+        
         <header class="header">
             <div class="logo-container">
-                <div class="g-dots">
-                    <span class="dot g-blue"></span>
-                    <span class="dot g-red"></span>
-                    <span class="dot g-yellow"></span>
-                    <span class="dot g-green"></span>
-                </div>
-                <h1>GDGoC HNU</h1>
+                <img src="LOGO.png" alt="GDGoC HNU Logo" class="site-logo">
             </div>
-            <h2>متابعة حالة التقديم</h2>
-            <p>أدخل الرقم القومي الخاص بك لمعرفة حالة طلب انضمامك لفريق GDGoC Helwan National University.</p>
+            <h1>Application Status</h1>
+            <p>Enter your 14-digit National ID to check the real-time status of your application.</p>
         </header>
 
-        <!-- Search Form -->
         <form id="searchForm" class="search-form glass-panel">
             <div class="input-group">
                 <i class="fa-solid fa-id-card input-icon"></i>
@@ -41,7 +43,7 @@
                     type="text" 
                     id="nationalId" 
                     name="nationalId" 
-                    placeholder="أدخل الرقم القومي (14 رقم)" 
+                    placeholder="Enter your National ID (14 digits)" 
                     pattern="\d{14}" 
                     maxlength="14"
                     required
@@ -49,18 +51,16 @@
                 >
             </div>
             <button type="submit" id="submitBtn" class="btn-primary">
-                <span class="btn-text">بحث</span>
-                <i class="fa-solid fa-arrow-left btn-icon"></i>
+                <span class="btn-text">Check Status</span>
+                <i class="fa-solid fa-arrow-right btn-icon"></i>
                 <div class="loader-spinner" style="display: none;"></div>
             </button>
         </form>
 
-        <!-- Status Container -->
         <div id="resultsContainer" class="results-container">
-            <!-- Results will be injected here via JS -->
             <div class="empty-state" id="initialState">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <p>قم بالبحث لعرض تفاصيل طلباتك</p>
+                <p>Search to view your application status</p>
             </div>
         </div>
 
