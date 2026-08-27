@@ -231,7 +231,7 @@ body {
 
 /* Active State */
 .pipe-step.active { 
-  background: linear-gradient(135deg, rgba(251,188,5,0.2), rgba(251,188,5,0.05)); 
+  background: linear-gradient(135deg, rgba(251,188,5,0.3), rgba(251,188,5,0.05)), #1c2b40; 
   border-color: var(--g-yellow); 
   box-shadow: 0 0 20px rgba(251,188,5,0.25); 
 }
@@ -240,7 +240,7 @@ body {
 
 /* Wait State */
 .pipe-step.active.wait { 
-  background: linear-gradient(135deg, rgba(168,85,247,0.2), rgba(168,85,247,0.05)); 
+  background: linear-gradient(135deg, rgba(168,85,247,0.3), rgba(168,85,247,0.05)), #1c2b40; 
   border-color: var(--g-purple); 
   box-shadow: 0 0 20px rgba(168,85,247,0.25); 
 }
@@ -249,7 +249,7 @@ body {
 
 /* Fail State */
 .pipe-step.fail { 
-  background: linear-gradient(135deg, rgba(234,67,53,0.2), rgba(234,67,53,0.05)); 
+  background: linear-gradient(135deg, rgba(234,67,53,0.3), rgba(234,67,53,0.05)), #1c2b40; 
   border-color: var(--g-red); 
   box-shadow: 0 0 20px rgba(234,67,53,0.3); 
 }
