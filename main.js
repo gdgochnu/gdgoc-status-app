@@ -138,12 +138,14 @@ function parseStatus(app) {
             return { class: 'status-rejected', icon: 'fa-xmark', label: label, pipeline: 2, state: 'fail', rejectMsg: true };
         }
         
-        if (tsk.includes('إرسال') || tsk.includes('بانتظار')) {
-            return { class: 'status-task-sent', icon: 'fa-paper-plane', label: 'Task Sent (Awaiting Submission)', pipeline: 2, state: 'active' };
-        }
-        
-        if (tsk.includes('تسليم')) {
+        // Exact match for "Task Submitted"
+        if ((tsk.includes('تسليم') || tsk.includes('تم التسليم') || tsk.includes('سلم')) && !tsk.includes('بانتظار')) {
             return { class: 'status-task-done', icon: 'fa-file-circle-check', label: 'Task Submitted (Under Review)', pipeline: 2, state: 'active' };
+        }
+
+        // Exact match for "Task Sent" or "Awaiting Submission"
+        if (tsk.includes('إرسال') || tsk.includes('بانتظار') || tsk.includes('تاسك')) {
+            return { class: 'status-task-sent', icon: 'fa-paper-plane', label: 'Task Sent (Awaiting Submission)', pipeline: 2, state: 'active' };
         }
         
         if (tsk.includes('قُبل')) {
