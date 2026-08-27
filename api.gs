@@ -15,9 +15,9 @@ const CONFIG = {
     TECH_ROLE: "الدور الذي ترغب في الانضمام به للتراك (Role Selection) :",
     NON_TECH_COMMITTEE: "اختر اللجنة / الدور الذي ترغب في التقديم عليه:  ",
     STATUS: "حالة القبول", 
-    TASK_STATUS: "حالة التاسك",
+    TASK_STATUS: ["حالة التاسك", "نتيجة التاسك", "التاسك"],
     INTERVIEW_TIME: "موعد المقابلة",
-    INTERVIEW_DECISION: "قرار الإنترفيو" 
+    INTERVIEW_DECISION: ["قرار الإنترفيو", "نتيجة الإنترفيو", "الإنترفيو"] 
   }
 };
 
@@ -81,10 +81,17 @@ function searchSheet(spreadsheetId, searchId, type, committeeColName) {
   const headers = data[0];
   
   // Find column indices
-  const getIndex = (name) => {
-    const idx = headers.findIndex(h => h.toString().trim() === name.trim());
-    if (idx !== -1) return idx;
-    return headers.findIndex(h => h.toString().includes(name.trim()));
+  const getIndex = (names) => {
+    if (!Array.isArray(names)) names = [names];
+    for (let name of names) {
+      let idx = headers.findIndex(h => h.toString().trim() === name.trim());
+      if (idx !== -1) return idx;
+    }
+    for (let name of names) {
+      let idx = headers.findIndex(h => h.toString().includes(name.trim()));
+      if (idx !== -1) return idx;
+    }
+    return -1;
   };
 
   const idIdx = getIndex(CONFIG.COLUMNS.NATIONAL_ID);
@@ -117,7 +124,8 @@ function searchSheet(spreadsheetId, searchId, type, committeeColName) {
         role: roleIdx !== -1 ? row[roleIdx] : null,
         initialStatus: initialStatus,
         taskStatus: taskStatus,
-        interviewTime: interviewTimeIdx !== -1 && row[interviewTimeIdx] ? row[interviewTimeIdx] : null
+        interviewTime: interviewTimeIdx !== -1 && row[interviewTimeIdx] ? row[interviewTimeIdx] : null,
+        interviewDecision: interviewDecisionIdx !== -1 && row[interviewDecisionIdx] ? row[interviewDecisionIdx] : ''
       });
     }
   }
