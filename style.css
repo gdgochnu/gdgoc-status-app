@@ -41,7 +41,7 @@
   --radius-md: 14px;
   --radius-sm: 8px;
   --transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  --font-family: 'Outfit', sans-serif;
+  --font-family: 'Outfit', 'Cairo', sans-serif;
 }
 
 /* ════════════════════════════════════════════════════
@@ -166,7 +166,7 @@ body {
   display: flex; justify-content: space-between; align-items: flex-start;
   padding: 24px 24px 15px; border-bottom: 1px solid var(--panel-border);
 }
-.applicant-info h3 { font-size: 19px; font-weight: 800; margin-bottom: 8px; }
+.applicant-info h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; font-family: var(--font-family); }
 .applicant-type {
   font-size: 13px; font-weight: 700; padding: 5px 12px; border-radius: 20px;
   display: inline-flex; align-items: center; gap: 6px;
