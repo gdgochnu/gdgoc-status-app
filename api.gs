@@ -14,15 +14,15 @@ const CONFIG = {
     TECH_COMMITTEE: "التراك التقني الأساسي الذي تقدم عليه (Primary Track)",
     TECH_ROLE: "الدور الذي ترغب في الانضمام به للتراك (Role Selection) :",
     NON_TECH_COMMITTEE: "اختر اللجنة / الدور الذي ترغب في التقديم عليه:  ",
-    STATUS: "الحالة", // IMPORTANT: Add this column to your sheets if it doesn't exist
-    INTERVIEW_TIME: "موعد المقابلة" // Optional: Add if you want to show interview times
+    STATUS: "حالة القبول", 
+    TASK_STATUS: "حالة التاسك",
+    INTERVIEW_TIME: "موعد المقابلة" 
   }
 };
 
 /**
  * HTTP GET handler (doGet)
  * Accepts a 'nid' (National ID) parameter and returns JSON results.
- * Example URL: https://script.google.com/macros/s/.../exec?nid=12345678901234
  */
 function doGet(e) {
   // Setup CORS headers to allow requests from the Vercel app
@@ -81,10 +81,8 @@ function searchSheet(spreadsheetId, searchId, type, committeeColName) {
   
   // Find column indices
   const getIndex = (name) => {
-    // Exact match or partial match for robustness
     const idx = headers.findIndex(h => h.toString().trim() === name.trim());
     if (idx !== -1) return idx;
-    // Fallback: search if header includes the name
     return headers.findIndex(h => h.toString().includes(name.trim()));
   };
 
@@ -93,6 +91,7 @@ function searchSheet(spreadsheetId, searchId, type, committeeColName) {
   const committeeIdx = getIndex(committeeColName);
   const roleIdx = type === 'Tech' ? getIndex(CONFIG.COLUMNS.TECH_ROLE) : -1;
   const statusIdx = getIndex(CONFIG.COLUMNS.STATUS);
+  const taskStatusIdx = getIndex(CONFIG.COLUMNS.TASK_STATUS);
   const interviewTimeIdx = getIndex(CONFIG.COLUMNS.INTERVIEW_TIME);
 
   if (idIdx === -1) return []; // National ID column not found in this sheet
@@ -105,12 +104,20 @@ function searchSheet(spreadsheetId, searchId, type, committeeColName) {
     const rowId = row[idIdx] ? row[idIdx].toString().trim() : '';
 
     if (rowId === searchId.trim()) {
+      
+      let initialStatus = statusIdx !== -1 && row[statusIdx] ? String(row[statusIdx]).trim() : 'قيد المراجعة';
+      let taskStatus = taskStatusIdx !== -1 && row[taskStatusIdx] ? String(row[taskStatusIdx]).trim() : '';
+      
+      // Detailed status logic
+      // If there's a task status, it takes precedence as it represents a later stage in the pipeline
+      let finalStatus = taskStatus ? taskStatus : initialStatus;
+
       matches.push({
         type: type,
         name: nameIdx !== -1 ? row[nameIdx] : 'مجهول',
         committee: committeeIdx !== -1 ? row[committeeIdx] : 'غير محدد',
         role: roleIdx !== -1 ? row[roleIdx] : null,
-        status: statusIdx !== -1 && row[statusIdx] ? row[statusIdx] : 'قيد المراجعة',
+        status: finalStatus,
         interviewTime: interviewTimeIdx !== -1 && row[interviewTimeIdx] ? row[interviewTimeIdx] : null
       });
     }
@@ -123,8 +130,6 @@ function searchSheet(spreadsheetId, searchId, type, committeeColName) {
  * Helper to create JSON responses compatible with Google Apps Script
  */
 function createJsonResponse(content, statusCode) {
-  // Google Apps Script doesn't let us easily set HTTP status codes in doGet,
-  // but we can return it in the JSON body.
   const response = ContentService.createTextOutput(JSON.stringify(content));
   response.setMimeType(ContentService.MimeType.JSON);
   return response;
