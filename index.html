@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GDGoC HNU - متابعة حالة الطلب</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Background Effects -->
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+    <div class="bg-shape shape-3"></div>
+
+    <main class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo-container">
+                <div class="g-dots">
+                    <span class="dot g-blue"></span>
+                    <span class="dot g-red"></span>
+                    <span class="dot g-yellow"></span>
+                    <span class="dot g-green"></span>
+                </div>
+                <h1>GDGoC HNU</h1>
+            </div>
+            <h2>متابعة حالة التقديم</h2>
+            <p>أدخل الرقم القومي الخاص بك لمعرفة حالة طلب انضمامك لفريق GDGoC Helwan National University.</p>
+        </header>
+
+        <!-- Search Form -->
+        <form id="searchForm" class="search-form glass-panel">
+            <div class="input-group">
+                <i class="fa-solid fa-id-card input-icon"></i>
+                <input 
+                    type="text" 
+                    id="nationalId" 
+                    name="nationalId" 
+                    placeholder="أدخل الرقم القومي (14 رقم)" 
+                    pattern="\d{14}" 
+                    maxlength="14"
+                    required
+                    autocomplete="off"
+                >
+            </div>
+            <button type="submit" id="submitBtn" class="btn-primary">
+                <span class="btn-text">بحث</span>
+                <i class="fa-solid fa-arrow-left btn-icon"></i>
+                <div class="loader-spinner" style="display: none;"></div>
+            </button>
+        </form>
+
+        <!-- Status Container -->
+        <div id="resultsContainer" class="results-container">
+            <!-- Results will be injected here via JS -->
+            <div class="empty-state" id="initialState">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <p>قم بالبحث لعرض تفاصيل طلباتك</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p>مصمم بشغف بواسطة فريق GDGoC Helwan National University &copy; 2026</p>
+    </footer>
+
+    <!-- Custom JS -->
+    <script src="main.js"></script>
+</body>
+</html>
