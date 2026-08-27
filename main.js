@@ -364,6 +364,7 @@ function showError(message) {
 }
 
 
+
 async function reportMissingTask(b64Data, btn) {
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
@@ -371,22 +372,16 @@ async function reportMissingTask(b64Data, btn) {
     try {
         const app = JSON.parse(decodeURIComponent(escape(atob(b64Data))));
         
-        const payload = {
+        const params = new URLSearchParams({
             action: 'reportMissingTask',
             nid: searchInput.value.trim(),
             name: app.name,
             email: app.email || '',
             team: app.type,
             role: app.role || app.committee
-        };
-
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            body: JSON.stringify(payload),
-            headers: {
-                'Content-Type': 'text/plain;charset=utf-8'
-            }
         });
+
+        const response = await fetch(`${API_URL}?${params.toString()}`);
 
         const result = await response.json();
         if (result.success) {
@@ -404,3 +399,4 @@ async function reportMissingTask(b64Data, btn) {
         btn.innerHTML = '<i class="fa-solid fa-envelope-open-text"></i> Report Missing Task';
     }
 }
+
