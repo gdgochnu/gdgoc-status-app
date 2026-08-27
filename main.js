@@ -45,11 +45,98 @@ function validateEgyptianNationalId(id) {
     return null; // Valid
 }
 
+
+// ==========================================
+// SOUND EFFECTS ENGINE (Web Audio API)
+// ==========================================
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new AudioContext();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+}
+
+const SoundFX = {
+    playType: () => {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.03);
+        gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.03);
+    },
+    playSwoosh: () => {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.05, audioCtx.currentTime + 0.1);
+        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.2);
+    },
+    playSuccess: () => {
+        if (!audioCtx) return;
+        const freqs = [523.25, 659.25, 783.99, 1046.50];
+        freqs.forEach((freq, i) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            const start = audioCtx.currentTime + (i * 0.1);
+            gain.gain.setValueAtTime(0, start);
+            gain.gain.linearRampToValueAtTime(0.05, start + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, start + 0.4);
+            osc.start(start);
+            osc.stop(start + 0.4);
+        });
+    },
+    playError: () => {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+    }
+};
+
+// Initialize audio on first interaction
+document.addEventListener('click', initAudio, { once: true });
+document.addEventListener('keydown', initAudio, { once: true });
+
 // ==========================================
 // EVENT LISTENERS
 // ==========================================
+nationalIdInput.addEventListener('input', () => SoundFX.playType());
+
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    SoundFX.playSwoosh();
     
     const nationalId = nationalIdInput.value.trim();
     
@@ -201,6 +288,7 @@ function parseStatus(app) {
 
 function renderResults(results) {
     if (!results || results.length === 0) {
+        SoundFX.playError();
         resultsContainer.innerHTML = `
             <div class="empty-state" style="animation: fadeUp 0.5s ease forwards;">
                 <div class="icon-circle" style="background: rgba(234,67,53,0.1); color: var(--g-red);">
@@ -213,6 +301,8 @@ function renderResults(results) {
         `;
         return;
     }
+
+    SoundFX.playSuccess();
 
     resultsContainer.innerHTML = `<h3 class="results-title" style="margin-bottom: 15px; text-align: center; color: var(--text-dim); animation: fadeIn 0.5s ease;">Found ${results.length} Application(s)</h3>`;
 
@@ -353,6 +443,7 @@ function renderResults(results) {
 }
 
 function showError(message) {
+    SoundFX.playError();
     resultsContainer.innerHTML = `
         <div class="empty-state" style="animation: fadeUp 0.3s ease forwards;">
             <div class="icon-circle" style="background: rgba(251,188,5,0.1); color: var(--g-yellow);">
