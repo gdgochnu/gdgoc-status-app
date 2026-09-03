@@ -404,9 +404,9 @@ function renderAttendanceSection(app, index, currentNid) {
                     </div>
                     <div class="attendance-info">
                         <div class="attendance-pill confirmed"><i class="fa-solid fa-check"></i> Attendance Confirmed</div>
-                        <h4 class="attendance-title">تم تأكيد حضور المقابلة بنجاح!</h4>
-                        <p class="attendance-desc">شكراً لك! تم تسجيل حضورك رسمياً لدى لجنة المقابلات. ننتظرك في الموعد المحدد بكل حماس.</p>
-                        ${confTime ? `<div class="attendance-timestamp"><i class="fa-regular fa-clock"></i> تم التسجيل في: ${confTime}</div>` : ''}
+                        <h4 class="attendance-title">Interview Attendance Confirmed!</h4>
+                        <p class="attendance-desc">Thank you! Your interview attendance has been officially confirmed with the committee. We look forward to meeting you at your scheduled time.</p>
+                        ${confTime ? `<div class="attendance-timestamp"><i class="fa-regular fa-clock"></i> Confirmed on: ${confTime}</div>` : ''}
                     </div>
                 </div>
             </div>
@@ -421,11 +421,11 @@ function renderAttendanceSection(app, index, currentNid) {
                         <i class="fa-solid fa-circle-xmark"></i>
                     </div>
                     <div class="attendance-info">
-                        <div class="attendance-pill declined"><i class="fa-solid fa-xmark"></i> Declined / اعتذار</div>
-                        <h4 class="attendance-title">تم تسجيل اعتذارك عن المقابلة</h4>
-                        <p class="attendance-desc">تم إخطار لجنة المقابلات باعتذارك عن الموعد. إذا كان هذا الخيار بالخطأ، يمكنك إعادة تأكيد الحضور الآن:</p>
+                        <div class="attendance-pill declined"><i class="fa-solid fa-xmark"></i> Declined</div>
+                        <h4 class="attendance-title">Interview Attendance Declined</h4>
+                        <p class="attendance-desc">The committee has been notified of your declination. If this was made by mistake and you wish to attend, you can re-confirm below:</p>
                         <button class="btn-confirm-attendance sm" onclick="confirmCandidateAttendance('${nidVal}', '${app.type}', '${app.scheduleId || ''}', 'Confirmed', this, ${index})">
-                            <i class="fa-solid fa-rotate-left"></i> تأكيد الحضور الآن (Confirm Attendance)
+                            <i class="fa-solid fa-rotate-left"></i> Re-Confirm Attendance
                         </button>
                     </div>
                 </div>
@@ -440,17 +440,17 @@ function renderAttendanceSection(app, index, currentNid) {
                     <i class="fa-solid fa-user-check"></i>
                 </div>
                 <div class="attendance-info">
-                    <div class="attendance-pill pending"><i class="fa-solid fa-hourglass-half"></i> Confirmation Required</div>
-                    <h4 class="attendance-title">تأكيد حضور المقابلة الشخصية</h4>
-                    <p class="attendance-desc">يرجى تأكيد حضورك للمقابلة في الموعد والمكان الموضحين أعلاه لضمان تثبيت حجز فترتك مع المحاور:</p>
+                    <div class="attendance-pill pending"><i class="fa-solid fa-hourglass-half"></i> Action Required</div>
+                    <h4 class="attendance-title">Confirm Your Interview Attendance</h4>
+                    <p class="attendance-desc">Please confirm your attendance for the scheduled date and time above to secure your interview slot with the committee panel:</p>
                 </div>
             </div>
             <div class="attendance-actions-row">
                 <button class="btn-confirm-attendance" onclick="confirmCandidateAttendance('${nidVal}', '${app.type}', '${app.scheduleId || ''}', 'Confirmed', this, ${index})">
-                    <i class="fa-solid fa-check-double"></i> أؤكد حضوري (Confirm Attendance)
+                    <i class="fa-solid fa-check-double"></i> Confirm Attendance
                 </button>
                 <button class="btn-decline-attendance" onclick="promptDeclineAttendance('${nidVal}', '${app.type}', '${app.scheduleId || ''}', this, ${index})">
-                    <i class="fa-solid fa-calendar-xmark"></i> اعتذار عن الموعد
+                    <i class="fa-solid fa-calendar-xmark"></i> Can't Attend (Decline)
                 </button>
             </div>
         </div>
@@ -888,9 +888,9 @@ window.confirmCandidateAttendance = async function(nid, type, scheduleId, status
                             </div>
                             <div class="attendance-info">
                                 <div class="attendance-pill confirmed"><i class="fa-solid fa-check"></i> Attendance Confirmed</div>
-                                <h4 class="attendance-title">تم تأكيد حضور المقابلة بنجاح!</h4>
-                                <p class="attendance-desc">شكراً لك! تم تسجيل حضورك رسمياً لدى لجنة المقابلات. ننتظرك في الموعد المحدد بكل حماس.</p>
-                                <div class="attendance-timestamp"><i class="fa-regular fa-clock"></i> تم التسجيل في: ${formattedTime}</div>
+                                <h4 class="attendance-title">Interview Attendance Confirmed!</h4>
+                                <p class="attendance-desc">Thank you! Your interview attendance has been officially confirmed with the committee. We look forward to meeting you at your scheduled time.</p>
+                                <div class="attendance-timestamp"><i class="fa-regular fa-clock"></i> Confirmed on: ${formattedTime}</div>
                             </div>
                         </div>
                     `;
@@ -901,11 +901,11 @@ window.confirmCandidateAttendance = async function(nid, type, scheduleId, status
                                 <i class="fa-solid fa-circle-xmark"></i>
                             </div>
                             <div class="attendance-info">
-                                <div class="attendance-pill declined"><i class="fa-solid fa-xmark"></i> Declined / اعتذار</div>
-                                <h4 class="attendance-title">تم تسجيل اعتذارك عن المقابلة</h4>
-                                <p class="attendance-desc">تم إخطار لجنة المقابلات باعتذارك عن الموعد. إذا كان هذا الخيار بالخطأ، يمكنك إعادة تأكيد الحضور الآن:</p>
+                                <div class="attendance-pill declined"><i class="fa-solid fa-xmark"></i> Declined</div>
+                                <h4 class="attendance-title">Interview Attendance Declined</h4>
+                                <p class="attendance-desc">The committee has been notified of your declination. If this was made by mistake and you wish to attend, you can re-confirm below:</p>
                                 <button class="btn-confirm-attendance sm" onclick="confirmCandidateAttendance('${nid}', '${type}', '${scheduleId}', 'Confirmed', this, ${index})">
-                                    <i class="fa-solid fa-rotate-left"></i> تأكيد الحضور الآن (Confirm Attendance)
+                                    <i class="fa-solid fa-rotate-left"></i> Re-Confirm Attendance
                                 </button>
                             </div>
                         </div>
@@ -921,12 +921,12 @@ window.confirmCandidateAttendance = async function(nid, type, scheduleId, status
             btnEl.disabled = false;
             btnEl.innerHTML = originalContent;
         }
-        alert('حدث خطأ أثناء الاتصال بالخادم لتأكيد الحضور، يرجى المحاولة مرة أخرى.');
+        alert('An error occurred while connecting to the server. Please try again.');
     }
 };
 
 window.promptDeclineAttendance = function(nid, type, scheduleId, btnEl, index) {
-    if (confirm('هل أنت متأكد من الاعتذار عن موعد المقابلة؟ سيتم إخطار لجنة المقابلات بذلك.')) {
+    if (confirm('Are you sure you want to decline this scheduled interview slot? The committee will be notified.')) {
         confirmCandidateAttendance(nid, type, scheduleId, 'Declined', btnEl, index);
     }
 };
