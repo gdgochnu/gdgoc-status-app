@@ -111,6 +111,8 @@ async function fetchStudentApplications(nationalId) {
             rawList.forEach(s => {
                 const hasInterview = Boolean(s.interviewScheduledAt && s.interviewScheduledAt !== 'Scheduled' && s.interviewScheduledAt !== '');
                 applications.push({
+                    nationalId: s.nid || cleanNid,
+                    scheduleId: s.scheduleId || '',
                     type: s.type || 'Tech',
                     name: s.name || 'Applicant',
                     email: s.email || '',
@@ -124,7 +126,10 @@ async function fetchStudentApplications(nationalId) {
                     interviewerEmail: s.interviewerEmail || '',
                     interviewNotes: s.interviewNotes || '',
                     interviewDecision: s.interviewDecision || '',
-                    isScheduled: hasInterview
+                    isScheduled: hasInterview,
+                    attendanceStatus: s.attendanceStatus || 'Pending',
+                    attendanceConfirmedAt: s.attendanceConfirmedAt || '',
+                    attendanceNote: s.attendanceNote || ''
                 });
             });
         }
@@ -141,10 +146,15 @@ async function fetchStudentApplications(nationalId) {
                 if (fallbackData.data && Array.isArray(fallbackData.data)) {
                     applications = fallbackData.data.map(app => ({
                         ...app,
+                        nationalId: app.nationalId || cleanNid,
+                        scheduleId: app.scheduleId || '',
                         committee: cleanCandidateText(app.committee),
                         role: cleanCandidateText(app.role),
                         interviewer: app.interviewer ? formatInterviewerTitle(app.interviewer) : null,
-                        isScheduled: Boolean(app.interviewTime && app.interviewTime !== '')
+                        isScheduled: Boolean(app.interviewTime && app.interviewTime !== ''),
+                        attendanceStatus: app.attendanceStatus || 'Pending',
+                        attendanceConfirmedAt: app.attendanceConfirmedAt || '',
+                        attendanceNote: app.attendanceNote || ''
                     }));
                 }
             }
@@ -379,6 +389,74 @@ function renderPrepGuide(app) {
     }
 }
 
+function renderAttendanceSection(app, index, currentNid) {
+    const isConfirmed = app.attendanceStatus === 'Confirmed';
+    const isDeclined = app.attendanceStatus === 'Declined';
+    const confTime = app.attendanceConfirmedAt ? formatInterviewDateTime(app.attendanceConfirmedAt) : '';
+    const nidVal = app.nationalId || currentNid || '';
+
+    if (isConfirmed) {
+        return `
+            <div class="attendance-card confirmed" id="attendanceCard-${index}">
+                <div class="attendance-card-header">
+                    <div class="attendance-badge-icon confirmed">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <div class="attendance-info">
+                        <div class="attendance-pill confirmed"><i class="fa-solid fa-check"></i> Attendance Confirmed</div>
+                        <h4 class="attendance-title">تم تأكيد حضور المقابلة بنجاح!</h4>
+                        <p class="attendance-desc">شكراً لك! تم تسجيل حضورك رسمياً لدى لجنة المقابلات. ننتظرك في الموعد المحدد بكل حماس.</p>
+                        ${confTime ? `<div class="attendance-timestamp"><i class="fa-regular fa-clock"></i> تم التسجيل في: ${confTime}</div>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    if (isDeclined) {
+        return `
+            <div class="attendance-card declined" id="attendanceCard-${index}">
+                <div class="attendance-card-header">
+                    <div class="attendance-badge-icon declined">
+                        <i class="fa-solid fa-circle-xmark"></i>
+                    </div>
+                    <div class="attendance-info">
+                        <div class="attendance-pill declined"><i class="fa-solid fa-xmark"></i> Declined / اعتذار</div>
+                        <h4 class="attendance-title">تم تسجيل اعتذارك عن المقابلة</h4>
+                        <p class="attendance-desc">تم إخطار لجنة المقابلات باعتذارك عن الموعد. إذا كان هذا الخيار بالخطأ، يمكنك إعادة تأكيد الحضور الآن:</p>
+                        <button class="btn-confirm-attendance sm" onclick="confirmCandidateAttendance('${nidVal}', '${app.type}', '${app.scheduleId || ''}', 'Confirmed', this, ${index})">
+                            <i class="fa-solid fa-rotate-left"></i> تأكيد الحضور الآن (Confirm Attendance)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="attendance-card pending" id="attendanceCard-${index}">
+            <div class="attendance-card-header">
+                <div class="attendance-badge-icon pending">
+                    <i class="fa-solid fa-user-check"></i>
+                </div>
+                <div class="attendance-info">
+                    <div class="attendance-pill pending"><i class="fa-solid fa-hourglass-half"></i> Confirmation Required</div>
+                    <h4 class="attendance-title">تأكيد حضور المقابلة الشخصية</h4>
+                    <p class="attendance-desc">يرجى تأكيد حضورك للمقابلة في الموعد والمكان الموضحين أعلاه لضمان تثبيت حجز فترتك مع المحاور:</p>
+                </div>
+            </div>
+            <div class="attendance-actions-row">
+                <button class="btn-confirm-attendance" onclick="confirmCandidateAttendance('${nidVal}', '${app.type}', '${app.scheduleId || ''}', 'Confirmed', this, ${index})">
+                    <i class="fa-solid fa-check-double"></i> أؤكد حضوري (Confirm Attendance)
+                </button>
+                <button class="btn-decline-attendance" onclick="promptDeclineAttendance('${nidVal}', '${app.type}', '${app.scheduleId || ''}', this, ${index})">
+                    <i class="fa-solid fa-calendar-xmark"></i> اعتذار عن الموعد
+                </button>
+            </div>
+        </div>
+    `;
+}
+
 function parseStatus(app) {
     let ini = app.initialStatus || 'قيد المراجعة';
     let tsk = app.taskStatus || '';
@@ -550,6 +628,8 @@ function renderResults(results) {
                     ` : ''}
 
                     ${renderPrepGuide(app)}
+
+                    ${renderAttendanceSection(app, index, nationalIdInput ? nationalIdInput.value.trim() : '')}
 
                     <div class="checklist-box">
                         <div class="checklist-title"><i class="fa-solid fa-list-check"></i> Interview Day Checklist</div>
@@ -763,3 +843,90 @@ window.addEventListener('DOMContentLoaded', () => {
         }, 500);
     }
 });
+
+// ==========================================
+// CANDIDATE ATTENDANCE CONFIRMATION
+// ==========================================
+window.confirmCandidateAttendance = async function(nid, type, scheduleId, status, btnEl, index) {
+    if (!nid && !scheduleId) return;
+
+    const cardEl = document.getElementById(`attendanceCard-${index}`);
+    const originalContent = btnEl ? btnEl.innerHTML : '';
+    if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+    }
+
+    try {
+        const url = `${MASTER_API_URL}?action=confirmAttendance&nid=${encodeURIComponent(nid)}&type=${encodeURIComponent(type || '')}&scheduleId=${encodeURIComponent(scheduleId || '')}&status=${encodeURIComponent(status)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.success || data.attendanceStatus) {
+            SoundFX.playSuccess();
+            const nowIso = new Date().toISOString();
+            const formattedTime = formatInterviewDateTime(nowIso);
+
+            // Update in-memory searchCache
+            if (searchCache.has(nid)) {
+                const list = searchCache.get(nid);
+                const found = list.find(a => (a.type || '').toLowerCase() === (type || '').toLowerCase()) || list[0];
+                if (found) {
+                    found.attendanceStatus = status;
+                    found.attendanceConfirmedAt = nowIso;
+                }
+            }
+
+            // Morph card into updated state
+            if (cardEl) {
+                cardEl.className = status === 'Confirmed' ? 'attendance-card confirmed' : 'attendance-card declined';
+                if (status === 'Confirmed') {
+                    cardEl.innerHTML = `
+                        <div class="attendance-card-header" style="animation: scaleIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+                            <div class="attendance-badge-icon confirmed">
+                                <i class="fa-solid fa-circle-check"></i>
+                            </div>
+                            <div class="attendance-info">
+                                <div class="attendance-pill confirmed"><i class="fa-solid fa-check"></i> Attendance Confirmed</div>
+                                <h4 class="attendance-title">تم تأكيد حضور المقابلة بنجاح!</h4>
+                                <p class="attendance-desc">شكراً لك! تم تسجيل حضورك رسمياً لدى لجنة المقابلات. ننتظرك في الموعد المحدد بكل حماس.</p>
+                                <div class="attendance-timestamp"><i class="fa-regular fa-clock"></i> تم التسجيل في: ${formattedTime}</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    cardEl.innerHTML = `
+                        <div class="attendance-card-header" style="animation: fadeIn 0.3s ease;">
+                            <div class="attendance-badge-icon declined">
+                                <i class="fa-solid fa-circle-xmark"></i>
+                            </div>
+                            <div class="attendance-info">
+                                <div class="attendance-pill declined"><i class="fa-solid fa-xmark"></i> Declined / اعتذار</div>
+                                <h4 class="attendance-title">تم تسجيل اعتذارك عن المقابلة</h4>
+                                <p class="attendance-desc">تم إخطار لجنة المقابلات باعتذارك عن الموعد. إذا كان هذا الخيار بالخطأ، يمكنك إعادة تأكيد الحضور الآن:</p>
+                                <button class="btn-confirm-attendance sm" onclick="confirmCandidateAttendance('${nid}', '${type}', '${scheduleId}', 'Confirmed', this, ${index})">
+                                    <i class="fa-solid fa-rotate-left"></i> تأكيد الحضور الآن (Confirm Attendance)
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        } else {
+            throw new Error(data.error || 'Failed to update attendance');
+        }
+    } catch (err) {
+        console.error('Attendance confirmation error:', err);
+        if (btnEl) {
+            btnEl.disabled = false;
+            btnEl.innerHTML = originalContent;
+        }
+        alert('حدث خطأ أثناء الاتصال بالخادم لتأكيد الحضور، يرجى المحاولة مرة أخرى.');
+    }
+};
+
+window.promptDeclineAttendance = function(nid, type, scheduleId, btnEl, index) {
+    if (confirm('هل أنت متأكد من الاعتذار عن موعد المقابلة؟ سيتم إخطار لجنة المقابلات بذلك.')) {
+        confirmCandidateAttendance(nid, type, scheduleId, 'Declined', btnEl, index);
+    }
+};
