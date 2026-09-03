@@ -838,6 +838,7 @@ function renderResults(results) {
     resultsContainer.innerHTML = `<h3 class="results-title" style="margin-bottom: 15px; text-align: center; color: var(--text-dim); animation: fadeIn 0.5s ease;">Found ${results.length} Application(s)</h3>`;
 
     results.forEach((app, index) => {
+        const b64App = btoa(unescape(encodeURIComponent(JSON.stringify(app))));
         const s = parseStatus(app);
         const typeColor = app.type === 'Tech' ? 'var(--g-blue)' : 'var(--g-green)';
         const typeIcon = app.type === 'Tech' ? 'fa-code' : 'fa-lightbulb';
@@ -1132,6 +1133,11 @@ function renderResults(results) {
                 ${interviewHtml}
                 ${rejectionHtml}
                 ${missingTaskHtml}
+                <div class="card-footer-actions">
+                    <button type="button" class="btn-share-status" onclick="openShareModal('${b64App}')">
+                        <i class="fa-solid fa-share-nodes"></i> Share Status Card
+                    </button>
+                </div>
             </div>
         `;
 
@@ -1301,3 +1307,199 @@ window.promptDeclineAttendance = function(nid, type, scheduleId, btnEl, index) {
         confirmCandidateAttendance(nid, type, scheduleId, 'Declined', btnEl, index);
     }
 };
+
+// ==========================================
+// SHARE STATUS MODAL & CARD EXPORT
+// ==========================================
+let activeShareApp = null;
+let activeShareStatus = null;
+
+window.openShareModal = function(b64) {
+    try {
+        const app = JSON.parse(decodeURIComponent(escape(atob(b64))));
+        const s = parseStatus(app);
+        activeShareApp = app;
+        activeShareStatus = s;
+
+        const dateDisplay = app.interviewTime ? formatInterviewDateTime(app.interviewTime) : '';
+        const roleStr = app.role && app.role !== 'null' ? `<span class="share-card-role-badge"><i class="fa-solid fa-id-badge"></i> ${app.role}</span>` : '';
+
+        let appointmentHtml = '';
+        if (app.interviewTime && (s.class === 'status-interview' || s.class === 'status-accepted' || s.pipeline >= 3)) {
+            appointmentHtml = `
+                <div class="share-card-appointment-info">
+                    <div><i class="fa-solid fa-calendar-check"></i> <strong>Appointment:</strong> ${dateDisplay}</div>
+                    <div style="margin-top:4px;"><i class="fa-solid fa-location-dot"></i> <strong>Venue:</strong> Building B (Computer Science), 3rd Floor</div>
+                </div>
+            `;
+        }
+
+        const previewContainer = document.getElementById('shareCardPreview');
+        if (previewContainer) {
+            previewContainer.innerHTML = `
+                <div class="share-card-top-bar">
+                    <div class="share-card-logo-wrap">
+                        <img src="LOGO.png" alt="GDGoC Logo" class="share-card-logo">
+                        <span class="share-card-brand-name">GDGoC HNU</span>
+                    </div>
+                    <span class="share-card-season-pill">Core Team 2026/27</span>
+                </div>
+
+                <div class="share-card-person">
+                    <h3 class="share-card-name">${app.name || 'Applicant'}</h3>
+                    <div class="share-card-track-row">
+                        <span class="share-card-track-badge">
+                            <i class="fa-solid ${app.type === 'Tech' ? 'fa-code' : 'fa-lightbulb'}"></i>
+                            ${app.committee || 'General Track'}
+                        </span>
+                        ${roleStr}
+                    </div>
+                </div>
+
+                <div class="share-card-status-box">
+                    <div class="share-card-status-title">Official Application Status</div>
+                    <div class="share-card-status-val">
+                        <i class="fa-solid ${s.icon}"></i>
+                        <span>${s.label}</span>
+                    </div>
+                    ${appointmentHtml}
+                </div>
+
+                <div class="share-card-footer">
+                    <div class="share-card-footer-brand">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <span>Verified Application Status</span>
+                    </div>
+                    <span>gdgoc-status-app.vercel.app</span>
+                </div>
+            `;
+        }
+
+        // WhatsApp Share URL
+        const cleanTrack = cleanCandidateText(app.committee) || 'Core Team';
+        let shareSummaryText = `🎉 My GDGoC Helwan National University Application Status:\nName: ${app.name || 'Applicant'}\nTrack: ${cleanTrack}\nStatus: ${s.label}`;
+        if (app.interviewTime) {
+            shareSummaryText += `\nInterview: ${dateDisplay}\nVenue: Building B (Computer Science), 3rd Floor`;
+        }
+        shareSummaryText += `\n\nCheck your application status here: https://gdgoc-status-app.vercel.app/`;
+
+        const waBtn = document.getElementById('btnShareWhatsApp');
+        if (waBtn) {
+            waBtn.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareSummaryText)}`;
+        }
+
+        const liBtn = document.getElementById('btnShareLinkedIn');
+        if (liBtn) {
+            liBtn.href = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://gdgoc-status-app.vercel.app/')}`;
+        }
+
+        const toast = document.getElementById('shareToastMsg');
+        if (toast) toast.style.display = 'none';
+
+        const modal = document.getElementById('shareModal');
+        if (modal) {
+            modal.style.display = 'flex';
+        }
+    } catch(err) {
+        console.error('Failed to open share modal:', err);
+    }
+};
+
+window.closeShareModal = function() {
+    const modal = document.getElementById('shareModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+};
+
+window.downloadShareCardImage = async function() {
+    const btn = document.getElementById('btnDownloadCard');
+    const origHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating...';
+    }
+
+    try {
+        const preview = document.getElementById('shareCardPreview');
+        if (window.html2canvas && preview) {
+            const canvas = await html2canvas(preview, {
+                scale: 2,
+                backgroundColor: '#0b1120',
+                useCORS: true,
+                logging: false
+            });
+            const dataUrl = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            const safeName = (activeShareApp && activeShareApp.name ? activeShareApp.name : 'Candidate').replace(/[^a-zA-Z0-9]/g, '_');
+            link.download = `GDGoC_Status_${safeName}.png`;
+            link.href = dataUrl;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } else {
+            copyShareText();
+        }
+    } catch (err) {
+        console.error('Error generating image:', err);
+        alert('Could not generate image on this device. Status summary copied instead.');
+        copyShareText();
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+        }
+    }
+};
+
+window.triggerNativeShare = async function() {
+    if (!activeShareApp) return;
+    const cleanTrack = cleanCandidateText(activeShareApp.committee) || 'Core Team';
+    const statusLabel = activeShareStatus ? activeShareStatus.label : 'Applicant';
+    const shareText = `🎉 My GDGoC Helwan National University Status: ${statusLabel} for ${cleanTrack}! Check your status at: https://gdgoc-status-app.vercel.app/`;
+
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'GDGoC Helwan National University Application Status',
+                text: shareText,
+                url: 'https://gdgoc-status-app.vercel.app/'
+            });
+        } catch(e) {
+            // Cancelled
+        }
+    } else {
+        copyShareText();
+    }
+};
+
+window.copyShareText = function() {
+    if (!activeShareApp) return;
+    const cleanTrack = cleanCandidateText(activeShareApp.committee) || 'Core Team';
+    const statusLabel = activeShareStatus ? activeShareStatus.label : 'Applicant';
+    const dateDisplay = activeShareApp.interviewTime ? formatInterviewDateTime(activeShareApp.interviewTime) : '';
+
+    let text = `🎉 GDGoC Helwan National University Application Status:\nCandidate: ${activeShareApp.name || ''}\nTrack: ${cleanTrack}\nStatus: ${statusLabel}`;
+    if (activeShareApp.interviewTime) {
+        text += `\nInterview: ${dateDisplay}\nVenue: Building B (Computer Science), 3rd Floor`;
+    }
+    text += `\nPortal: https://gdgoc-status-app.vercel.app/`;
+
+    navigator.clipboard.writeText(text).then(() => {
+        const toast = document.getElementById('shareToastMsg');
+        if (toast) {
+            toast.textContent = '✓ Summary copied to clipboard!';
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        }
+    }).catch(() => {
+        alert('Failed to copy to clipboard.');
+    });
+};
+
+document.addEventListener('click', (e) => {
+    const modal = document.getElementById('shareModal');
+    if (modal && e.target === modal) {
+        closeShareModal();
+    }
+});

@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="style.css?v=16">
+    <link rel="stylesheet" href="style.css?v=17">
 </head>
 <body>
     
@@ -66,12 +66,57 @@
 
     </main>
 
+    <!-- Share Status Modal -->
+    <div id="shareModal" class="share-modal-backdrop" style="display: none;">
+        <div class="share-modal-dialog">
+            <div class="share-modal-header">
+                <div class="share-modal-title">
+                    <i class="fa-solid fa-share-nodes"></i>
+                    <span>Share Application Status Card</span>
+                </div>
+                <button type="button" class="share-modal-close" onclick="closeShareModal()">&times;</button>
+            </div>
+            
+            <div class="share-modal-body">
+                <!-- Branded Preview Card (Captured to Image) -->
+                <div id="shareCardPreview" class="share-card-canvas">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <div class="share-modal-footer">
+                <div class="share-actions-row">
+                    <button type="button" id="btnDownloadCard" class="btn-share-action download" onclick="downloadShareCardImage()">
+                        <i class="fa-solid fa-download"></i> Download Image (PNG)
+                    </button>
+                    <button type="button" id="btnNativeShare" class="btn-share-action native" onclick="triggerNativeShare()">
+                        <i class="fa-solid fa-share-from-square"></i> Share
+                    </button>
+                </div>
+                <div class="share-social-row">
+                    <a id="btnShareWhatsApp" href="#" target="_blank" rel="noopener noreferrer" class="btn-social-share whatsapp">
+                        <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                    </a>
+                    <a id="btnShareLinkedIn" href="#" target="_blank" rel="noopener noreferrer" class="btn-social-share linkedin">
+                        <i class="fa-brands fa-linkedin"></i> LinkedIn
+                    </a>
+                    <button type="button" id="btnCopyShareText" class="btn-social-share copy" onclick="copyShareText()">
+                        <i class="fa-solid fa-copy"></i> Copy Text
+                    </button>
+                </div>
+                <div id="shareToastMsg" class="share-toast-msg" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer>
         <p>Designed with passion by GDGoC Helwan National University Team &copy; 2026</p>
     </footer>
 
+    <!-- html2canvas for card export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- Custom JS -->
-    <script src="main.js?v=18"></script>
+    <script src="main.js?v=19"></script>
 </body>
 </html>
