@@ -347,8 +347,145 @@ form.addEventListener('submit', async (e) => {
 // ==========================================
 // FUNCTIONS
 // ==========================================
+let countdownIntervals = [];
+
+function clearAllCountdowns() {
+    countdownIntervals.forEach(id => clearInterval(id));
+    countdownIntervals = [];
+}
+
+function parseInterviewDate(dateStr) {
+    if (!dateStr || dateStr === 'Scheduled' || dateStr === 'null') return null;
+    let d = new Date(dateStr);
+    if (!isNaN(d.getTime())) return d;
+    let cleaned = String(dateStr).trim().replace(' ', 'T');
+    d = new Date(cleaned);
+    if (!isNaN(d.getTime())) return d;
+    return null;
+}
+
+function initCountdown(dateStr, index) {
+    const targetDate = parseInterviewDate(dateStr);
+    if (!targetDate) return;
+
+    const daysEl = document.getElementById(`cd-days-${index}`);
+    const hoursEl = document.getElementById(`cd-hours-${index}`);
+    const minsEl = document.getElementById(`cd-mins-${index}`);
+    const secsEl = document.getElementById(`cd-secs-${index}`);
+    const urgencyEl = document.getElementById(`cd-urgency-${index}`);
+    const noticeEl = document.getElementById(`cd-notice-${index}`);
+    const cardEl = document.getElementById(`countdown-card-${index}`);
+
+    if (!daysEl || !hoursEl || !minsEl || !secsEl) return;
+
+    function update() {
+        const now = Date.now();
+        const diff = targetDate.getTime() - now;
+
+        if (diff <= 0) {
+            const passedMs = Math.abs(diff);
+            const passedHours = passedMs / (1000 * 60 * 60);
+
+            daysEl.textContent = '00';
+            hoursEl.textContent = '00';
+            minsEl.textContent = '00';
+            secsEl.textContent = '00';
+
+            if (passedHours < 3) {
+                if (urgencyEl) {
+                    urgencyEl.textContent = 'In Session';
+                    urgencyEl.className = 'countdown-urgency-badge live';
+                }
+                if (noticeEl) {
+                    noticeEl.innerHTML = '<i class="fa-solid fa-fire fa-fade" style="color:var(--g-yellow);"></i> <span><strong>Happening Now:</strong> Your interview session is today! Please be at Building B.</span>';
+                }
+                if (cardEl) {
+                    cardEl.classList.remove('today', 'ended');
+                    cardEl.classList.add('urgent');
+                }
+            } else {
+                if (urgencyEl) {
+                    urgencyEl.textContent = 'Concluded';
+                    urgencyEl.className = 'countdown-urgency-badge ended';
+                }
+                if (noticeEl) {
+                    noticeEl.innerHTML = '<i class="fa-solid fa-circle-check" style="color:var(--g-green);"></i> <span>Interview scheduled time has passed. Best of luck with your evaluation!</span>';
+                }
+                if (cardEl) {
+                    cardEl.classList.remove('urgent', 'today');
+                    cardEl.classList.add('ended');
+                }
+            }
+            return;
+        }
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+        daysEl.textContent = String(days).padStart(2, '0');
+        hoursEl.textContent = String(hours).padStart(2, '0');
+        minsEl.textContent = String(mins).padStart(2, '0');
+        secsEl.textContent = String(secs).padStart(2, '0');
+
+        if (days === 0 && hours < 2) {
+            if (urgencyEl) {
+                urgencyEl.textContent = 'Starting Soon';
+                urgencyEl.className = 'countdown-urgency-badge urgent';
+            }
+            if (noticeEl) {
+                noticeEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation fa-bounce" style="color:var(--g-red);"></i> <span><strong>Final Call:</strong> Arrive at Building B 30 mins before your slot!</span>';
+            }
+            if (cardEl) {
+                cardEl.classList.remove('today', 'ended');
+                cardEl.classList.add('urgent');
+            }
+        } else if (days === 0) {
+            if (urgencyEl) {
+                urgencyEl.textContent = 'Happening Today';
+                urgencyEl.className = 'countdown-urgency-badge today';
+            }
+            if (noticeEl) {
+                noticeEl.innerHTML = '<i class="fa-solid fa-clock fa-spin" style="color:var(--g-yellow); --fa-animation-duration: 4s;"></i> <span><strong>Today is Interview Day!</strong> Make sure your presentation and ID are ready.</span>';
+            }
+            if (cardEl) {
+                cardEl.classList.remove('urgent', 'ended');
+                cardEl.classList.add('today');
+            }
+        } else if (days === 1) {
+            if (urgencyEl) {
+                urgencyEl.textContent = 'Tomorrow';
+                urgencyEl.className = 'countdown-urgency-badge tomorrow';
+            }
+            if (noticeEl) {
+                noticeEl.innerHTML = '<i class="fa-solid fa-bolt" style="color:var(--g-blue);"></i> <span><strong>Tomorrow is your interview:</strong> Review your prep guidelines and confirm attendance.</span>';
+            }
+            if (cardEl) {
+                cardEl.classList.remove('urgent', 'today', 'ended');
+            }
+        } else {
+            if (urgencyEl) {
+                urgencyEl.textContent = `${days} Days Left`;
+                urgencyEl.className = 'countdown-urgency-badge';
+            }
+            if (noticeEl) {
+                noticeEl.innerHTML = '<i class="fa-solid fa-calendar-days" style="color:var(--g-green);"></i> <span>Plenty of time to prepare — review the checklist below.</span>';
+            }
+            if (cardEl) {
+                cardEl.classList.remove('urgent', 'today', 'ended');
+            }
+        }
+    }
+
+    update();
+    const intervalId = setInterval(update, 1000);
+    countdownIntervals.push(intervalId);
+}
+
 function setLoading(isLoading) {
     if (isLoading) {
+        clearAllCountdowns();
         submitBtn.disabled = true;
         btnText.style.display = 'none';
         btnIcon.style.display = 'none';
@@ -608,6 +745,7 @@ function parseStatus(app) {
 }
 
 function renderResults(results) {
+    clearAllCountdowns();
     if (!results || results.length === 0) {
         SoundFX.playError();
         resultsContainer.innerHTML = `
@@ -649,12 +787,54 @@ function renderResults(results) {
             const dateDisplay = formatInterviewDateTime(app.interviewTime);
             const interviewerDisplay = app.interviewer ? (app.interviewer.startsWith('Eng.') ? app.interviewer : 'Eng. ' + app.interviewer) : 'Eng. GDGoC Technical Team';
 
+            const countdownHtml = (app.interviewTime && parseInterviewDate(app.interviewTime)) ? `
+                <div class="interview-countdown-card" id="countdown-card-${index}">
+                    <div class="countdown-card-header">
+                        <div class="countdown-badge">
+                            <span class="countdown-pulse-ring"></span>
+                            <i class="fa-solid fa-hourglass-half"></i>
+                            <span>Interview Countdown</span>
+                        </div>
+                        <div class="countdown-urgency-badge" id="cd-urgency-${index}">Live Sync</div>
+                    </div>
+                    
+                    <div class="countdown-digits-grid">
+                        <div class="countdown-digit-box">
+                            <span class="countdown-digit-val" id="cd-days-${index}">--</span>
+                            <span class="countdown-digit-lbl">Days</span>
+                        </div>
+                        <span class="countdown-digit-sep">:</span>
+                        <div class="countdown-digit-box">
+                            <span class="countdown-digit-val" id="cd-hours-${index}">--</span>
+                            <span class="countdown-digit-lbl">Hours</span>
+                        </div>
+                        <span class="countdown-digit-sep">:</span>
+                        <div class="countdown-digit-box">
+                            <span class="countdown-digit-val" id="cd-mins-${index}">--</span>
+                            <span class="countdown-digit-lbl">Mins</span>
+                        </div>
+                        <span class="countdown-digit-sep">:</span>
+                        <div class="countdown-digit-box">
+                            <span class="countdown-digit-val" id="cd-secs-${index}">--</span>
+                            <span class="countdown-digit-lbl">Secs</span>
+                        </div>
+                    </div>
+
+                    <div class="countdown-notice-bar" id="cd-notice-${index}">
+                        <i class="fa-solid fa-clock"></i>
+                        <span>Calculating remaining time to interview...</span>
+                    </div>
+                </div>
+            ` : '';
+
             interviewHtml = `
                 <div class="interview-details-box">
                     <div class="interview-header-row">
                         <span class="interview-tag"><i class="fa-solid fa-calendar-check"></i> Confirmed Appointment</span>
                         <span style="font-size: 11.5px; color: var(--text-dim); font-weight: 600;">GDGoC Core Team 2026/2027</span>
                     </div>
+
+                    ${countdownHtml}
 
                     <div class="interview-time-display">
                         <div class="interview-time-icon"><i class="fa-solid fa-clock"></i></div>
@@ -845,9 +1025,17 @@ function renderResults(results) {
 
         resultsContainer.appendChild(card);
     });
+
+    // Initialize real-time countdown timers for scheduled interviews
+    results.forEach((app, index) => {
+        if (app.interviewTime) {
+            initCountdown(app.interviewTime, index);
+        }
+    });
 }
 
 function showError(message) {
+    clearAllCountdowns();
     SoundFX.playError();
     resultsContainer.innerHTML = `
         <div class="empty-state" style="animation: fadeUp 0.3s ease forwards;">

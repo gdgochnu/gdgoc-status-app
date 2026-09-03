@@ -447,6 +447,241 @@ footer { text-align: center; padding: 20px; color: var(--text-muted); font-size:
   align-items: center;
   gap: 5px;
 }
+/* ==========================================
+   INTERVIEW COUNTDOWN TIMER
+   ========================================== */
+.interview-countdown-card {
+  background: linear-gradient(135deg, rgba(66, 133, 244, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%);
+  border: 1.5px solid rgba(66, 133, 244, 0.35);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.interview-countdown-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 30% 20%, rgba(66, 133, 244, 0.15) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.interview-countdown-card.urgent {
+  background: linear-gradient(135deg, rgba(234, 67, 53, 0.16) 0%, rgba(15, 23, 42, 0.65) 100%);
+  border-color: rgba(234, 67, 53, 0.5);
+  box-shadow: 0 0 24px rgba(234, 67, 53, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.interview-countdown-card.today {
+  background: linear-gradient(135deg, rgba(251, 188, 5, 0.16) 0%, rgba(15, 23, 42, 0.65) 100%);
+  border-color: rgba(251, 188, 5, 0.5);
+  box-shadow: 0 0 24px rgba(251, 188, 5, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.interview-countdown-card.ended {
+  background: rgba(0, 0, 0, 0.25);
+  border-color: rgba(255, 255, 255, 0.12);
+  opacity: 0.88;
+}
+
+.countdown-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.countdown-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #c2e7ff;
+}
+
+.countdown-pulse-ring {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--g-blue);
+  box-shadow: 0 0 0 0 rgba(66, 133, 244, 0.7);
+  animation: pulseDot 1.8s infinite;
+}
+
+.interview-countdown-card.urgent .countdown-pulse-ring {
+  background: var(--g-red);
+  box-shadow: 0 0 0 0 rgba(234, 67, 53, 0.7);
+}
+
+.interview-countdown-card.today .countdown-pulse-ring {
+  background: var(--g-yellow);
+  box-shadow: 0 0 0 0 rgba(251, 188, 5, 0.7);
+}
+
+@keyframes pulseDot {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(66, 133, 244, 0.7);
+  }
+  70% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 6px rgba(66, 133, 244, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(66, 133, 244, 0);
+  }
+}
+
+.countdown-urgency-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: rgba(66, 133, 244, 0.2);
+  color: #c2e7ff;
+  border: 1px solid rgba(66, 133, 244, 0.4);
+}
+
+.countdown-urgency-badge.today {
+  background: rgba(251, 188, 5, 0.2);
+  color: #fde293;
+  border-color: rgba(251, 188, 5, 0.4);
+}
+
+.countdown-urgency-badge.urgent {
+  background: rgba(234, 67, 53, 0.25);
+  color: #f28b82;
+  border-color: rgba(234, 67, 53, 0.5);
+  animation: pulseGlow 1.5s infinite alternate;
+}
+
+.countdown-urgency-badge.tomorrow {
+  background: rgba(66, 133, 244, 0.25);
+  color: #a8c7fa;
+  border-color: rgba(66, 133, 244, 0.45);
+}
+
+.countdown-urgency-badge.live {
+  background: rgba(234, 67, 53, 0.25);
+  color: #f28b82;
+  border-color: rgba(234, 67, 53, 0.5);
+}
+
+.countdown-urgency-badge.ended {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-dim);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.countdown-digits-grid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 6px 0 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.countdown-digit-box {
+  flex: 1;
+  max-width: 72px;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.countdown-digit-val {
+  font-family: 'Outfit', monospace, sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.1;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 12px rgba(66, 133, 244, 0.5);
+}
+
+.interview-countdown-card.urgent .countdown-digit-val {
+  text-shadow: 0 0 12px rgba(234, 67, 53, 0.5);
+  color: #ffcdd2;
+}
+
+.interview-countdown-card.today .countdown-digit-val {
+  text-shadow: 0 0 12px rgba(251, 188, 5, 0.5);
+  color: #fff9c4;
+}
+
+.countdown-digit-lbl {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-top: 3px;
+}
+
+.countdown-digit-sep {
+  font-family: 'Outfit', monospace, sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 1;
+  padding-bottom: 12px;
+  animation: blinkSep 1s ease-in-out infinite;
+}
+
+@keyframes blinkSep {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 0.2; }
+}
+
+.countdown-notice-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #e2e8f0;
+  background: rgba(0, 0, 0, 0.22);
+  border-radius: 8px;
+  padding: 8px 12px;
+  border-left: 2.5px solid var(--g-blue);
+  position: relative;
+  z-index: 1;
+  line-height: 1.5;
+}
+
+.interview-countdown-card.urgent .countdown-notice-bar {
+  border-left-color: var(--g-red);
+}
+
+.interview-countdown-card.today .countdown-notice-bar {
+  border-left-color: var(--g-yellow);
+}
+
+.interview-countdown-card.ended .countdown-notice-bar {
+  border-left-color: var(--g-green);
+}
+
 .interview-time-display {
   display: flex;
   align-items: center;
