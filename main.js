@@ -359,7 +359,7 @@ function formatInterviewDateTime(dateStr) {
         const d = new Date(dateStr);
         if (isNaN(d.getTime())) return dateStr;
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true };
-        return d.toLocaleDateString('en-US', options);
+        return d.toLocaleDateString('en-US', options) + ' (Cairo Time · GMT+3)';
     } catch(e) {
         return dateStr;
     }
@@ -643,6 +643,15 @@ function renderResults(results) {
                         </div>
                     </div>
 
+                    <div class="interview-location-display">
+                        <div class="interview-location-icon"><i class="fa-solid fa-location-dot"></i></div>
+                        <div class="interview-location-text">
+                            <span class="interview-location-label">Interview Venue / Location</span>
+                            <span class="interview-location-value">Helwan National University — Computers Building, 3rd Floor</span>
+                            <span class="interview-location-sub"><i class="fa-solid fa-building-columns"></i> جامعة حلوان الأهلية — مبنى حاسبات — الدور الثالث</span>
+                        </div>
+                    </div>
+
                     <div class="interview-meta-grid">
                         <div class="interview-meta-item">
                             <span class="interview-meta-title"><i class="fa-solid fa-user-tie"></i> Interviewer</span>
@@ -673,10 +682,10 @@ function renderResults(results) {
                     <div class="checklist-box">
                         <div class="checklist-title"><i class="fa-solid fa-list-check"></i> Interview Day Checklist</div>
                         <div class="checklist-grid">
-                            <div class="checklist-item"><i class="fa-regular fa-clock"></i> Join 30 minutes early</div>
-                            <div class="checklist-item"><i class="fa-solid fa-wifi"></i> Stable internet connection</div>
+                            <div class="checklist-item"><i class="fa-regular fa-clock"></i> Arrive 30 minutes early</div>
+                            <div class="checklist-item"><i class="fa-solid fa-building-columns"></i> Venue: Computers Bldg, 3rd Floor</div>
+                            <div class="checklist-item"><i class="fa-solid fa-id-card"></i> College ID / National ID ready</div>
                             <div class="checklist-item"><i class="fa-regular fa-file-powerpoint"></i> Presentation / tasks ready</div>
-                            <div class="checklist-item"><i class="fa-regular fa-face-smile"></i> Stay confident & clear</div>
                         </div>
                     </div>
                 </div>
