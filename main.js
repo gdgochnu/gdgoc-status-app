@@ -647,8 +647,8 @@ function renderResults(results) {
                         <div class="interview-location-icon"><i class="fa-solid fa-location-dot"></i></div>
                         <div class="interview-location-text">
                             <span class="interview-location-label">Interview Venue / Location</span>
-                            <span class="interview-location-value">Helwan National University — Computer Science Building, 3rd Floor</span>
-                            <span class="interview-location-sub"><i class="fa-solid fa-building-columns"></i> جامعة حلوان الأهلية — مبنى حاسبات ومعلومات (Computer Science) — الدور الثالث</span>
+                            <span class="interview-location-value">Helwan National University — Building B (Computer Science), 3rd Floor</span>
+                            <span class="interview-location-sub"><i class="fa-solid fa-building-columns"></i> Faculty of Computers &amp; Artificial Intelligence — Building B, 3rd Floor</span>
                         </div>
                     </div>
 
@@ -683,7 +683,7 @@ function renderResults(results) {
                         <div class="checklist-title"><i class="fa-solid fa-list-check"></i> Interview Day Checklist</div>
                         <div class="checklist-grid">
                             <div class="checklist-item"><i class="fa-regular fa-clock"></i> Arrive 30 minutes early</div>
-                            <div class="checklist-item"><i class="fa-solid fa-building-columns"></i> Venue: Computer Science Bldg, 3rd Floor</div>
+                            <div class="checklist-item"><i class="fa-solid fa-building-columns"></i> Venue: Building B (Computer Science), 3rd Floor</div>
                             <div class="checklist-item"><i class="fa-solid fa-id-card"></i> College ID / National ID ready</div>
                             <div class="checklist-item"><i class="fa-regular fa-file-powerpoint"></i> Presentation / tasks ready</div>
                         </div>
