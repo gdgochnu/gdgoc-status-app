@@ -660,7 +660,7 @@ function renderResults(results) {
                         ` : ''}
                     </div>
 
-                    ${app.interviewNotes ? `
+                    ${(app.interviewNotes && !app.interviewNotes.toLowerCase().includes('smart auto-generated batch') && !app.interviewNotes.toLowerCase().includes('auto-generated')) ? `
                     <div class="interview-notes-bar">
                         <strong><i class="fa-solid fa-circle-info"></i> Notes:</strong> ${app.interviewNotes}
                     </div>
