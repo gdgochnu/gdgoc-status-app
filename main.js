@@ -5,7 +5,9 @@
 // ==========================================
 // CONFIGURATION
 // ==========================================
-// IMPORTANT: Replace this URL with your deployed Google Apps Script Web App URL
+// Master Admin System API (Realtime Evaluated Students & Scheduled Appointments)
+const MASTER_API_URL = "https://script.google.com/macros/s/AKfycbx6H9hNYnzJkph774lFTLhSgOIQK8C9AC0RnqcFVy85ya4K3UvbnKJyDqOmdQ-uGhJQ/exec";
+// Legacy / Fallback Web App URL (Raw Forms Submissions & Missing Task Reporter)
 const API_URL = "https://script.google.com/macros/s/AKfycbzkiqzpZB6f0ji-WJFwCZbfqCOBgA55fNmTMKRjTtiESYDn6kshOSbRsxoqTwb9a4Uc3Q/exec"; 
 
 // ==========================================
@@ -20,7 +22,7 @@ const spinner = document.querySelector('.loader-spinner');
 const resultsContainer = document.getElementById('resultsContainer');
 
 // ==========================================
-// VALIDATION
+// VALIDATION & HELPERS
 // ==========================================
 function validateEgyptianNationalId(id) {
     if (!/^\d{14}$/.test(id)) return "National ID must be exactly 14 digits.";
@@ -43,6 +45,91 @@ function validateEgyptianNationalId(id) {
     if (!validGovs.includes(gov)) return "Invalid governorate code in National ID.";
 
     return null; // Valid
+}
+
+function cleanCandidateText(text) {
+    if (!text) return '';
+    let s = String(text);
+    try {
+        s = s.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '');
+        s = s.replace(/[\u2600-\u27BF]/g, '');
+        s = s.replace(/[\uFE00-\uFE0F]/g, '');
+    } catch(e) {}
+    s = s.replace(/[\uFFFD\uFFFE\uFFFF]/g, '');
+    return s.replace(/\s+/g, ' ').trim();
+}
+
+function formatInterviewerTitle(name) {
+    let raw = cleanCandidateText(name);
+    if (!raw || raw.toLowerCase() === 'gdgoc team' || raw === '-' || raw.toLowerCase() === 'unknown') {
+        return 'Eng. GDGoC Technical Team';
+    }
+    if (/^eng\.?/i.test(raw) || /^م\.?\s*/i.test(raw) || /^مهندس/i.test(raw)) {
+        return raw;
+    }
+    return 'Eng. ' + raw;
+}
+
+async function fetchStudentApplications(nationalId) {
+    // 1. Fetch live evaluated & scheduled data directly from master Admin Interviews system
+    try {
+        const [resTech, resNonTech] = await Promise.all([
+            fetch(`${MASTER_API_URL}?action=getStudent&nid=${encodeURIComponent(nationalId)}&type=Tech`),
+            fetch(`${MASTER_API_URL}?action=getStudent&nid=${encodeURIComponent(nationalId)}&type=Non-Tech`)
+        ]);
+
+        const [dataTech, dataNonTech] = await Promise.all([
+            resTech.ok ? resTech.json() : null,
+            resNonTech.ok ? resNonTech.json() : null
+        ]);
+
+        const applications = [];
+        [dataTech, dataNonTech].forEach(d => {
+            if (d && d.student && d.student.nid) {
+                const s = d.student;
+                const hasInterview = Boolean(s.interviewScheduledAt && s.interviewScheduledAt !== 'Scheduled' && s.interviewScheduledAt !== '');
+                applications.push({
+                    type: s.type || 'Tech',
+                    name: s.name || 'Applicant',
+                    email: s.email || '',
+                    committee: cleanCandidateText(s.track) || 'General Track',
+                    role: cleanCandidateText(s.role) || null,
+                    initialStatus: s.taskStatus ? 'مقبول' : 'قيد المراجعة',
+                    taskStatus: s.taskStatus || '',
+                    taskNotes: s.taskReviewNotes || '',
+                    interviewTime: s.interviewScheduledAt || null,
+                    interviewer: s.assignedInterviewer ? formatInterviewerTitle(s.assignedInterviewer) : null,
+                    interviewerEmail: s.interviewerEmail || '',
+                    interviewNotes: s.interviewNotes || '',
+                    interviewDecision: s.interviewDecision || '',
+                    isScheduled: hasInterview
+                });
+            }
+        });
+
+        if (applications.length > 0) {
+            return applications;
+        }
+    } catch (err) {
+        console.warn('Master API fetch error, checking fallback:', err);
+    }
+
+    // 2. Fallback to raw form response API
+    const fallbackResponse = await fetch(`${API_URL}?nid=${encodeURIComponent(nationalId)}`);
+    if (!fallbackResponse.ok) {
+        throw new Error('Network error. Failed to connect to server.');
+    }
+    const fallbackData = await fallbackResponse.json();
+    if (fallbackData.error) throw new Error(fallbackData.error);
+    return (fallbackData.data || []).map(app => {
+        return {
+            ...app,
+            committee: cleanCandidateText(app.committee),
+            role: cleanCandidateText(app.role),
+            interviewer: app.interviewer ? formatInterviewerTitle(app.interviewer) : null,
+            isScheduled: Boolean(app.interviewTime && app.interviewTime !== '')
+        };
+    });
 }
 
 
@@ -160,19 +247,8 @@ form.addEventListener('submit', async (e) => {
     resultsContainer.innerHTML = ''; // Clear previous results
 
     try {
-        const response = await fetch(`${API_URL}?nid=${encodeURIComponent(nationalId)}`);
-        
-        if (!response.ok) {
-            throw new Error('Network error. Failed to connect to server.');
-        }
-
-        const data = await response.json();
-
-        if (data.error) {
-            throw new Error(data.error);
-        }
-
-        renderResults(data.data);
+        const apps = await fetchStudentApplications(nationalId);
+        renderResults(apps);
         // Save ID for auto-fetch on next visit
         localStorage.setItem('gdgoc_saved_nid', nationalId);
 
