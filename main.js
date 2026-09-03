@@ -70,23 +70,45 @@ function formatInterviewerTitle(name) {
     return 'Eng. ' + raw;
 }
 
+// In-memory instant client cache
+const searchCache = new Map();
+
 async function fetchStudentApplications(nationalId) {
-    // 1. Fetch live evaluated & scheduled data directly from master Admin Interviews system
+    const cleanNid = nationalId.trim();
+    if (searchCache.has(cleanNid)) {
+        return searchCache.get(cleanNid);
+    }
+
+    let applications = [];
+
+    // 1. Primary: Fetch live evaluated & scheduled data directly from master Admin Interviews system
     try {
-        const [resTech, resNonTech] = await Promise.all([
-            fetch(`${MASTER_API_URL}?action=getStudent&nid=${encodeURIComponent(nationalId)}&type=Tech`),
-            fetch(`${MASTER_API_URL}?action=getStudent&nid=${encodeURIComponent(nationalId)}&type=Non-Tech`)
-        ]);
+        const masterRes = await fetch(`${MASTER_API_URL}?action=getStudent&nid=${encodeURIComponent(cleanNid)}`);
+        if (masterRes.ok) {
+            const data = await masterRes.json();
+            
+            // Gather matching applications (supports both single student and students array)
+            let rawList = [];
+            if (data.students && Array.isArray(data.students) && data.students.length > 0) {
+                rawList = data.students;
+            } else if (data.student && data.student.nid) {
+                rawList = [data.student];
+                
+                // If only 1 application returned, check if candidate also has an application in the other track
+                const firstType = (data.student.type || '').toLowerCase();
+                const otherType = firstType === 'tech' ? 'Non-Tech' : 'Tech';
+                try {
+                    const secondRes = await fetch(`${MASTER_API_URL}?action=getStudent&nid=${encodeURIComponent(cleanNid)}&type=${otherType}`);
+                    if (secondRes.ok) {
+                        const secondData = await secondRes.json();
+                        if (secondData.student && secondData.student.nid) {
+                            rawList.push(secondData.student);
+                        }
+                    }
+                } catch (e) {}
+            }
 
-        const [dataTech, dataNonTech] = await Promise.all([
-            resTech.ok ? resTech.json() : null,
-            resNonTech.ok ? resNonTech.json() : null
-        ]);
-
-        const applications = [];
-        [dataTech, dataNonTech].forEach(d => {
-            if (d && d.student && d.student.nid) {
-                const s = d.student;
+            rawList.forEach(s => {
                 const hasInterview = Boolean(s.interviewScheduledAt && s.interviewScheduledAt !== 'Scheduled' && s.interviewScheduledAt !== '');
                 applications.push({
                     type: s.type || 'Tech',
@@ -104,32 +126,38 @@ async function fetchStudentApplications(nationalId) {
                     interviewDecision: s.interviewDecision || '',
                     isScheduled: hasInterview
                 });
-            }
-        });
-
-        if (applications.length > 0) {
-            return applications;
+            });
         }
     } catch (err) {
-        console.warn('Master API fetch error, checking fallback:', err);
+        console.warn('Master API fetch error:', err);
     }
 
-    // 2. Fallback to raw form response API
-    const fallbackResponse = await fetch(`${API_URL}?nid=${encodeURIComponent(nationalId)}`);
-    if (!fallbackResponse.ok) {
-        throw new Error('Network error. Failed to connect to server.');
+    // 2. Fallback to raw form response API ONLY if no applications were found in the master database
+    if (applications.length === 0) {
+        try {
+            const fallbackResponse = await fetch(`${API_URL}?nid=${encodeURIComponent(cleanNid)}`);
+            if (fallbackResponse.ok) {
+                const fallbackData = await fallbackResponse.json();
+                if (fallbackData.data && Array.isArray(fallbackData.data)) {
+                    applications = fallbackData.data.map(app => ({
+                        ...app,
+                        committee: cleanCandidateText(app.committee),
+                        role: cleanCandidateText(app.role),
+                        interviewer: app.interviewer ? formatInterviewerTitle(app.interviewer) : null,
+                        isScheduled: Boolean(app.interviewTime && app.interviewTime !== '')
+                    }));
+                }
+            }
+        } catch (fbErr) {
+            console.warn('Fallback API error:', fbErr);
+        }
     }
-    const fallbackData = await fallbackResponse.json();
-    if (fallbackData.error) throw new Error(fallbackData.error);
-    return (fallbackData.data || []).map(app => {
-        return {
-            ...app,
-            committee: cleanCandidateText(app.committee),
-            role: cleanCandidateText(app.role),
-            interviewer: app.interviewer ? formatInterviewerTitle(app.interviewer) : null,
-            isScheduled: Boolean(app.interviewTime && app.interviewTime !== '')
-        };
-    });
+
+    if (applications.length > 0) {
+        searchCache.set(cleanNid, applications);
+    }
+
+    return applications;
 }
 
 
@@ -518,8 +546,8 @@ function renderResults(results) {
                     <div class="checklist-box">
                         <div class="checklist-title"><i class="fa-solid fa-list-check"></i> Interview Day Checklist</div>
                         <div class="checklist-grid">
-                            <div class="checklist-item"><i class="fa-regular fa-clock"></i> Join 10 minutes early</div>
-                            <div class="checklist-item"><i class="fa-solid fa-wifi"></i> Stable internet & mic</div>
+                            <div class="checklist-item"><i class="fa-regular fa-clock"></i> Join 30 minutes early</div>
+                            <div class="checklist-item"><i class="fa-solid fa-wifi"></i> Stable internet connection</div>
                             <div class="checklist-item"><i class="fa-regular fa-file-powerpoint"></i> Presentation / tasks ready</div>
                             <div class="checklist-item"><i class="fa-regular fa-face-smile"></i> Stay confident & clear</div>
                         </div>
