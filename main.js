@@ -73,15 +73,28 @@ function formatInterviewerTitle(name) {
 // Persistent Multi-Tier Client Cache (In-Memory + SessionStorage + LocalStorage)
 const searchCache = new Map();
 
+const CACHE_TTL_SCHEDULED   = 90 * 1000;  // 90 seconds – interview already scheduled, data won't change often
+const CACHE_TTL_UNSCHEDULED = 0;           // Never cache – student may get scheduled at any moment
+
 function getCachedApplications(nid) {
     if (searchCache.has(nid)) {
-        return searchCache.get(nid);
+        const mem = searchCache.get(nid);
+        // If none of the applications have an interview scheduled, never serve from cache
+        const anyScheduled = mem && mem.some(a => a.isScheduled);
+        if (!anyScheduled) return null;
+        return mem;
     }
     try {
         const stored = sessionStorage.getItem('gdgoc_app_cache_' + nid) || localStorage.getItem('gdgoc_app_cache_' + nid);
         if (stored) {
             const parsed = JSON.parse(stored);
-            if (Date.now() - parsed.ts < 5 * 60 * 1000) { // 5 minutes TTL
+            const anyScheduled = parsed.apps && parsed.apps.some(a => a.isScheduled);
+            if (!anyScheduled) {
+                // Clear stale no-interview cache so the next fetch is always live
+                clearCache(nid);
+                return null;
+            }
+            if (Date.now() - parsed.ts < CACHE_TTL_SCHEDULED) {
                 searchCache.set(nid, parsed.apps);
                 return parsed.apps;
             }
@@ -96,6 +109,14 @@ function setCachedApplications(nid, apps) {
         const payload = JSON.stringify({ ts: Date.now(), apps: apps });
         sessionStorage.setItem('gdgoc_app_cache_' + nid, payload);
         localStorage.setItem('gdgoc_app_cache_' + nid, payload);
+    } catch(e) {}
+}
+
+function clearCache(nid) {
+    searchCache.delete(nid);
+    try {
+        sessionStorage.removeItem('gdgoc_app_cache_' + nid);
+        localStorage.removeItem('gdgoc_app_cache_' + nid);
     } catch(e) {}
 }
 
