@@ -598,8 +598,7 @@ function renderResults(results) {
                 rejectionHtml = `
                     <div class="rejection-alert">
                         <p style="margin-bottom: 6px; font-weight: 700; color: #fff;"><i class="fa-solid fa-clock-rotate-left" style="color: var(--g-red); margin-right: 6px;"></i> Task Submission Deadline Passed</p>
-                        <p style="margin-bottom: 8px;">The deadline to submit your technical task has ended. Applications without a submitted task prior to the deadline unfortunately cannot advance to the interview stage.</p>
-                        <p style="font-size: 12.5px; color: #cbd5e1; margin: 0; line-height: 1.6;">نظراً لانتهاء المهلة المحددة لتسليم التاسك، تم إغلاق باب استقبال الحلول والاعتذار عن عدم التأهل لمرحلة المقابلة الشخصية. نتمنى لك كل التوفيق والنجاح!</p>
+                        <p style="margin: 0;">The deadline to submit your technical task has ended. Applications without a submitted task prior to the deadline unfortunately cannot advance to the interview stage.</p>
                     </div>
                 `;
             } else {
