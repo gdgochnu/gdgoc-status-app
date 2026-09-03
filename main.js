@@ -511,6 +511,78 @@ function setLoading(isLoading) {
     }
 }
 
+function buildGoogleCalendarUrl(app) {
+    const targetDate = parseInterviewDate(app.interviewTime);
+    if (!targetDate) return '#';
+    const endDate = new Date(targetDate.getTime() + 30 * 60 * 1000);
+
+    const formatGDate = (d) => d.toISOString().replace(/-|:|\.\d+/g, '');
+    const dates = `${formatGDate(targetDate)}/${formatGDate(endDate)}`;
+
+    const cleanTrack = cleanCandidateText(app.committee) || 'Core Team';
+    const title = `GDGoC Core Team Interview - ${cleanTrack}`;
+    const details = `Congratulations on qualifying for the official interview with GDGoC Helwan National University Core Team 2026/2027!\n\nCandidate: ${app.name || 'Applicant'}\nTrack: ${cleanTrack}\nRole: ${cleanCandidateText(app.role) || 'General'}\nInterviewer: ${app.interviewer || 'Technical Team'}\nVenue: Helwan National University — Building B (Computer Science), 3rd Floor\n\nPlease arrive 30 minutes before your scheduled appointment with your University or National ID.\nStatus Portal: https://gdgoc-status-app.vercel.app/`;
+    const location = `Faculty of Computer Science, Helwan National University, Building B, 3rd Floor`;
+
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${dates}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
+}
+
+window.downloadInterviewICal = function(b64) {
+    try {
+        const app = JSON.parse(decodeURIComponent(escape(atob(b64))));
+        const targetDate = parseInterviewDate(app.interviewTime);
+        if (!targetDate) return;
+        const endDate = new Date(targetDate.getTime() + 30 * 60 * 1000);
+
+        const formatIcsDate = (d) => d.toISOString().replace(/-|:|\.\d+/g, '');
+        const startStr = formatIcsDate(targetDate);
+        const endStr = formatIcsDate(endDate);
+        const nowStr = formatIcsDate(new Date());
+
+        const cleanTrack = cleanCandidateText(app.committee) || 'Core Team';
+        const title = `GDGoC Core Team Interview - ${cleanTrack}`;
+        const description = `Official GDGoC Helwan National University Core Team Interview.\\nCandidate: ${app.name || ''}\\nTrack: ${cleanTrack}\\nVenue: Helwan National University — Building B (Computer Science), 3rd Floor.\\nPlease arrive 30 minutes early with your University/National ID.`;
+        const location = `Faculty of Computer Science, Helwan National University, Building B, 3rd Floor`;
+
+        const icsContent = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//GDGoC HNU//Application Status//EN',
+            'CALSCALE:GREGORIAN',
+            'METHOD:PUBLISH',
+            'BEGIN:VEVENT',
+            `UID:gdgoc-${Date.now()}@hnu.gdg`,
+            `DTSTAMP:${nowStr}`,
+            `DTSTART:${startStr}`,
+            `DTEND:${endStr}`,
+            `SUMMARY:${title}`,
+            `DESCRIPTION:${description}`,
+            `LOCATION:${location}`,
+            'STATUS:CONFIRMED',
+            'BEGIN:VALARM',
+            'TRIGGER:-PT30M',
+            'ACTION:DISPLAY',
+            'DESCRIPTION:Reminder: GDGoC Interview in 30 minutes at Building B',
+            'END:VALARM',
+            'END:VEVENT',
+            'END:VCALENDAR'
+        ].join('\r\n');
+
+        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const safeName = (app.name || 'Applicant').replace(/[^a-zA-Z0-9]/g, '_');
+        link.download = `GDGoC_Interview_${safeName}.ics`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch(err) {
+        console.error('Failed to generate iCal:', err);
+    }
+};
+
 function formatInterviewDateTime(dateStr) {
     if (!dateStr || dateStr === 'Scheduled' || dateStr === 'null') return 'Interview Scheduled (Details to be confirmed)';
     try {
@@ -827,6 +899,19 @@ function renderResults(results) {
                 </div>
             ` : '';
 
+            const googleCalUrl = buildGoogleCalendarUrl(app);
+            const b64App = btoa(unescape(encodeURIComponent(JSON.stringify(app))));
+            const calendarActionsHtml = (app.interviewTime && parseInterviewDate(app.interviewTime)) ? `
+                <div class="calendar-actions-wrap">
+                    <a href="${googleCalUrl}" target="_blank" rel="noopener noreferrer" class="btn-cal google">
+                        <i class="fa-brands fa-google"></i> Add to Google Calendar
+                    </a>
+                    <button type="button" class="btn-cal ical" onclick="downloadInterviewICal('${b64App}')">
+                        <i class="fa-solid fa-calendar-plus"></i> Download iCal (.ics)
+                    </button>
+                </div>
+            ` : '';
+
             interviewHtml = `
                 <div class="interview-details-box">
                     <div class="interview-header-row">
@@ -844,12 +929,39 @@ function renderResults(results) {
                         </div>
                     </div>
 
+                    ${calendarActionsHtml}
+
                     <div class="interview-location-display">
                         <div class="interview-location-icon"><i class="fa-solid fa-location-dot"></i></div>
                         <div class="interview-location-text">
                             <span class="interview-location-label">Interview Venue / Location</span>
                             <span class="interview-location-value">Helwan National University — Building B (Computer Science), 3rd Floor</span>
                             <span class="interview-location-sub"><i class="fa-solid fa-building-columns"></i> Faculty of Computers &amp; Artificial Intelligence — Building B, 3rd Floor</span>
+                        </div>
+                    </div>
+
+                    <div class="interview-map-box">
+                        <div class="map-header">
+                            <div class="map-title">
+                                <i class="fa-solid fa-map-location-dot"></i>
+                                <span>Campus Location Map</span>
+                            </div>
+                            <a href="https://maps.google.com/?q=Faculty+of+computer+science+helwan+national+university" target="_blank" rel="noopener noreferrer" class="map-external-link">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Open in Google Maps
+                            </a>
+                        </div>
+                        <div class="map-frame-wrapper">
+                            <iframe 
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1729.9103867705494!2d31.31932196859505!3d29.869442217882174!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x145837e94446de75%3A0x1e81892096f0f8f4!2sFaculty%20of%20computer%20science%20helwan%20national%20university!5e0!3m2!1sar!2seg!4v1788439861082!5m2!1sar!2seg" 
+                                allowfullscreen="" 
+                                loading="lazy" 
+                                referrerpolicy="strict-origin-when-cross-origin"
+                                title="Faculty of Computer Science Map"
+                            ></iframe>
+                        </div>
+                        <div class="map-footer-hint">
+                            <i class="fa-solid fa-location-crosshairs"></i>
+                            <span>Head to <strong>Building B (Computer Science)</strong> &mdash; 3rd Floor upon arrival.</span>
                         </div>
                     </div>
 
