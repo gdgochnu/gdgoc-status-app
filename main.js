@@ -426,8 +426,16 @@ function parseStatus(app) {
         if (tsk === 'تم التسليم') {
             return { class: 'status-task-done', icon: 'fa-file-circle-check', label: 'Task Submitted (Under Review)', pipeline: 2, state: 'active' };
         }
-        if (tsk === 'تم إرسال التاسك') {
-            return { class: 'status-task-sent', icon: 'fa-paper-plane', label: 'Task Sent (Awaiting Submission)', pipeline: 2, state: 'active' };
+        if (tsk === 'تم إرسال التاسك' || tsk === 'Task Sent' || tsk.includes('إرسال التاسك')) {
+            return {
+                class: 'status-rejected',
+                icon: 'fa-clock-rotate-left',
+                label: 'Rejected (Task Deadline Passed)',
+                pipeline: 2,
+                state: 'fail',
+                rejectMsg: true,
+                deadlinePassed: true
+            };
         }
         if (tsk === 'بانتظار الإرسال') {
             return { class: 'status-task-sent', icon: 'fa-hourglass-start', label: 'Initially Accepted (Awaiting Tasks)', pipeline: 2, state: 'active' };
@@ -586,11 +594,21 @@ function renderResults(results) {
 
         let rejectionHtml = '';
         if (s.rejectMsg) {
-            rejectionHtml = `
-                <div class="rejection-alert">
-                    <p>We received an overwhelming number of applications this year with exceptionally high competition. Unfortunately, we cannot move forward with your application at this time. We deeply appreciate your interest and wish you the best in your future endeavors!</p>
-                </div>
-            `;
+            if (s.deadlinePassed) {
+                rejectionHtml = `
+                    <div class="rejection-alert">
+                        <p style="margin-bottom: 6px; font-weight: 700; color: #fff;"><i class="fa-solid fa-clock-rotate-left" style="color: var(--g-red); margin-right: 6px;"></i> Task Submission Deadline Passed</p>
+                        <p style="margin-bottom: 8px;">The deadline to submit your technical task has ended. Applications without a submitted task prior to the deadline unfortunately cannot advance to the interview stage.</p>
+                        <p style="font-size: 12.5px; color: #cbd5e1; margin: 0; line-height: 1.6;">نظراً لانتهاء المهلة المحددة لتسليم التاسك، تم إغلاق باب استقبال الحلول والاعتذار عن عدم التأهل لمرحلة المقابلة الشخصية. نتمنى لك كل التوفيق والنجاح!</p>
+                    </div>
+                `;
+            } else {
+                rejectionHtml = `
+                    <div class="rejection-alert">
+                        <p>We received an overwhelming number of applications this year with exceptionally high competition. Unfortunately, we cannot move forward with your application at this time. We deeply appreciate your interest and wish you the best in your future endeavors!</p>
+                    </div>
+                `;
+            }
         }
 
         
