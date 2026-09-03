@@ -70,13 +70,40 @@ function formatInterviewerTitle(name) {
     return 'Eng. ' + raw;
 }
 
-// In-memory instant client cache
+// Persistent Multi-Tier Client Cache (In-Memory + SessionStorage + LocalStorage)
 const searchCache = new Map();
+
+function getCachedApplications(nid) {
+    if (searchCache.has(nid)) {
+        return searchCache.get(nid);
+    }
+    try {
+        const stored = sessionStorage.getItem('gdgoc_app_cache_' + nid) || localStorage.getItem('gdgoc_app_cache_' + nid);
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Date.now() - parsed.ts < 5 * 60 * 1000) { // 5 minutes TTL
+                searchCache.set(nid, parsed.apps);
+                return parsed.apps;
+            }
+        }
+    } catch(e) {}
+    return null;
+}
+
+function setCachedApplications(nid, apps) {
+    searchCache.set(nid, apps);
+    try {
+        const payload = JSON.stringify({ ts: Date.now(), apps: apps });
+        sessionStorage.setItem('gdgoc_app_cache_' + nid, payload);
+        localStorage.setItem('gdgoc_app_cache_' + nid, payload);
+    } catch(e) {}
+}
 
 async function fetchStudentApplications(nationalId) {
     const cleanNid = nationalId.trim();
-    if (searchCache.has(cleanNid)) {
-        return searchCache.get(cleanNid);
+    const cached = getCachedApplications(cleanNid);
+    if (cached) {
+        return cached;
     }
 
     let applications = [];
@@ -93,19 +120,6 @@ async function fetchStudentApplications(nationalId) {
                 rawList = data.students;
             } else if (data.student && data.student.nid) {
                 rawList = [data.student];
-                
-                // If only 1 application returned, check if candidate also has an application in the other track
-                const firstType = (data.student.type || '').toLowerCase();
-                const otherType = firstType === 'tech' ? 'Non-Tech' : 'Tech';
-                try {
-                    const secondRes = await fetch(`${MASTER_API_URL}?action=getStudent&nid=${encodeURIComponent(cleanNid)}&type=${otherType}`);
-                    if (secondRes.ok) {
-                        const secondData = await secondRes.json();
-                        if (secondData.student && secondData.student.nid) {
-                            rawList.push(secondData.student);
-                        }
-                    }
-                } catch (e) {}
             }
 
             rawList.forEach(s => {
@@ -164,7 +178,7 @@ async function fetchStudentApplications(nationalId) {
     }
 
     if (applications.length > 0) {
-        searchCache.set(cleanNid, applications);
+        setCachedApplications(cleanNid, applications);
     }
 
     return applications;
@@ -259,8 +273,12 @@ document.addEventListener('keydown', initAudio, { once: true });
 // ==========================================
 nationalIdInput.addEventListener('input', () => SoundFX.playType());
 
+let isSearchInFlight = false;
+
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (isSearchInFlight) return;
+    
     SoundFX.playSwoosh();
     
     const nationalId = nationalIdInput.value.trim();
@@ -269,7 +287,6 @@ form.addEventListener('submit', async (e) => {
     const validationError = validateEgyptianNationalId(nationalId);
     if (validationError) {
         showError(validationError);
-        // Highlight input
         nationalIdInput.style.borderColor = "var(--g-yellow)";
         setTimeout(() => nationalIdInput.style.borderColor = "", 2000);
         return;
@@ -280,9 +297,17 @@ form.addEventListener('submit', async (e) => {
         return;
     }
 
+    // Instant zero-delay cache hit check
+    const cached = getCachedApplications(nationalId);
+    if (cached) {
+        renderResults(cached);
+        localStorage.setItem('gdgoc_saved_nid', nationalId);
+        return;
+    }
+
     // Set Loading State
+    isSearchInFlight = true;
     setLoading(true);
-    resultsContainer.innerHTML = ''; // Clear previous results
 
     try {
         const apps = await fetchStudentApplications(nationalId);
@@ -294,6 +319,7 @@ form.addEventListener('submit', async (e) => {
         showError(error.message || "Failed to fetch data. Please check your internet connection.");
     } finally {
         setLoading(false);
+        isSearchInFlight = false;
     }
 });
 
@@ -306,6 +332,19 @@ function setLoading(isLoading) {
         btnText.style.display = 'none';
         btnIcon.style.display = 'none';
         spinner.style.display = 'block';
+        resultsContainer.innerHTML = `
+            <div class="skeleton-loader-wrap">
+                <div class="skeleton-shimmer-badge">
+                    <i class="fa-solid fa-satellite-dish fa-fade"></i> Fetching Live Application Status...
+                </div>
+                <div class="skeleton-line title"></div>
+                <div class="skeleton-line sub"></div>
+                <div class="skeleton-grid">
+                    <div class="skeleton-box"></div>
+                    <div class="skeleton-box"></div>
+                </div>
+            </div>
+        `;
     } else {
         submitBtn.disabled = false;
         btnText.style.display = 'inline';
@@ -868,12 +907,14 @@ window.confirmCandidateAttendance = async function(nid, type, scheduleId, status
             const formattedTime = formatInterviewDateTime(nowIso);
 
             // Update in-memory searchCache
-            if (searchCache.has(nid)) {
-                const list = searchCache.get(nid);
+            // Update in-memory & persistent cache
+            const list = getCachedApplications(nid);
+            if (list && Array.isArray(list)) {
                 const found = list.find(a => (a.type || '').toLowerCase() === (type || '').toLowerCase()) || list[0];
                 if (found) {
                     found.attendanceStatus = status;
                     found.attendanceConfirmedAt = nowIso;
+                    setCachedApplications(nid, list);
                 }
             }
 
