@@ -200,6 +200,81 @@ function setLoading(isLoading) {
     }
 }
 
+function formatInterviewDateTime(dateStr) {
+    if (!dateStr || dateStr === 'Scheduled' || dateStr === 'null') return 'Interview Scheduled (Details to be confirmed)';
+    try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true };
+        return d.toLocaleDateString('en-US', options);
+    } catch(e) {
+        return dateStr;
+    }
+}
+
+function renderPrepGuide(app) {
+    const roleLow = String(app.role || '').toLowerCase();
+    const trackLow = String(app.committee || '').toLowerCase();
+    const isInstructor = roleLow.includes('instructor') || roleLow.includes('مدرس') || roleLow.includes('محاضر');
+    const isMentor = roleLow.includes('mentor') || roleLow.includes('مرشد') || roleLow.includes('موجه');
+    const isTech = app.type === 'Tech' || ['ai', 'data', 'web', 'cyber'].some(k => trackLow.includes(k));
+
+    if (isInstructor) {
+        return `
+            <div class="prep-card instructor">
+                <span class="prep-pill instructor">Instructor Track Preparation</span>
+                <div class="prep-title"><i class="fa-solid fa-graduation-cap"></i> Technical Presentation Demonstration</div>
+                <p class="prep-desc">As an <strong>Instructor</strong> candidate, you are requested to prepare a <strong>short presentation or topic (5 to 10 minutes)</strong> related to your track to present live during your interview:</p>
+                <ul class="prep-list">
+                    <li><i class="fa-solid fa-check"></i> Choose a technical concept within your track that you are passionate about teaching.</li>
+                    <li><i class="fa-solid fa-check"></i> Focus on clarity, structuring the topic logically, and simplifying complex ideas for learners.</li>
+                    <li><i class="fa-solid fa-check"></i> You will be asked in-depth conceptual and technical questions about your chosen topic.</li>
+                    <li><i class="fa-solid fa-check"></i> Feel free to prepare slides, code snippets, or a live coding demo to showcase your delivery.</li>
+                </ul>
+            </div>
+        `;
+    } else if (isMentor) {
+        return `
+            <div class="prep-card mentor">
+                <span class="prep-pill mentor">Mentor Track Preparation</span>
+                <div class="prep-title"><i class="fa-solid fa-screwdriver-wrench"></i> Live Assessment & Problem Solving</div>
+                <p class="prep-desc">As a <strong>Mentor</strong> candidate, your interview will emphasize practical debugging, problem diagnosis, and guiding developers:</p>
+                <ul class="prep-list">
+                    <li><i class="fa-solid fa-check"></i> <strong>Live Problem-Solving / Bug Fixing:</strong> You may be presented with a practical technical bug or scenario to troubleshoot and walk through your solution.</li>
+                    <li><i class="fa-solid fa-check"></i> Be prepared to explain technical concepts clearly and demonstrate your methodology for unblocking team members.</li>
+                    <li><i class="fa-solid fa-check"></i> You will be evaluated on your code review mindset, technical empathy, and guidance ability.</li>
+                </ul>
+            </div>
+        `;
+    } else if (isTech) {
+        return `
+            <div class="prep-card tech">
+                <span class="prep-pill tech">Technical Role Preparation</span>
+                <div class="prep-title"><i class="fa-solid fa-code"></i> Technical Interview Focus</div>
+                <p class="prep-desc">Please be prepared to discuss:</p>
+                <ul class="prep-list">
+                    <li><i class="fa-solid fa-check"></i> Your submitted task, architecture decisions, and implementation details.</li>
+                    <li><i class="fa-solid fa-check"></i> Previous practical projects, tech stack experience, and problem-solving methodologies.</li>
+                    <li><i class="fa-solid fa-check"></i> Core fundamentals of your track.</li>
+                </ul>
+            </div>
+        `;
+    } else {
+        return `
+            <div class="prep-card nontech">
+                <span class="prep-pill nontech">Committee Preparation</span>
+                <div class="prep-title"><i class="fa-solid fa-users"></i> Committee Interview Focus</div>
+                <p class="prep-desc">Please be prepared to discuss:</p>
+                <ul class="prep-list">
+                    <li><i class="fa-solid fa-check"></i> Your previous experience and portfolio relevant to this committee.</li>
+                    <li><i class="fa-solid fa-check"></i> Situational questions and practical scenarios.</li>
+                    <li><i class="fa-solid fa-check"></i> Team collaboration, time commitment, and your vision for GDGoC.</li>
+                </ul>
+            </div>
+        `;
+    }
+}
+
 function parseStatus(app) {
     let ini = app.initialStatus || 'قيد المراجعة';
     let tsk = app.taskStatus || '';
@@ -230,9 +305,13 @@ function parseStatus(app) {
         return { class: 'status-waitlist', icon: 'fa-hourglass-half', label: 'Waitlisted (Post-Interview)', pipeline: 3, state: 'wait' };
     }
 
-    // 2. Task Phase
-    if (tsk || ini.includes('مقبول') || ini.includes('مقابلة') || intv) {
-        
+    // 2. Scheduled Interview
+    if (intv || app.isScheduled) {
+        return { class: 'status-interview', icon: 'fa-calendar-check', label: 'Interview Scheduled', pipeline: 3, state: 'active' };
+    }
+
+    // 3. Task Phase
+    if (tsk || ini.includes('مقبول') || ini.includes('مقابلة')) {
         // Rejections in Task phase
         if (tsk.includes('مرفوض') || tsk.includes('لم يقم') || tsk.includes('Not Done') || (ini.includes('مرفوض') && tsk)) {
             let label = tsk.includes('لم يقم') ? 'Rejected (Task Not Submitted)' : 'Rejected (Task Phase)';
@@ -250,36 +329,26 @@ function parseStatus(app) {
             return { class: 'status-task-sent', icon: 'fa-hourglass-start', label: 'Initially Accepted (Awaiting Tasks)', pipeline: 2, state: 'active' };
         }
         
-        if (tsk.includes('قُبل')) {
-            // Passed task! Now check interview
-            if (intv || ini.includes('مقابلة') || ini.includes('Interview')) {
-                return { class: 'status-interview', icon: 'fa-comments', label: 'Invited for Interview', pipeline: 3, state: 'active' };
-            } else if (ini.includes('مرفوض') && tsk.includes('قُبل')) {
-                // Passed task but rejected in interview
-                return { class: 'status-rejected', icon: 'fa-ban', label: 'Rejected (Post-Interview)', pipeline: 3, state: 'fail', rejectMsg: true };
-            } else {
-                // Passed task, waiting for interview schedule
-                return { class: 'status-accepted', icon: 'fa-check', label: 'Task Accepted (Awaiting Interview Date)', pipeline: 3, state: 'wait' };
-            }
+        if (tsk.includes('قُبل') || tsk.includes('قبل') || tsk.includes('accept')) {
+            return { class: 'status-accepted', icon: 'fa-hourglass-half', label: 'Task Accepted (Awaiting Interview Date)', pipeline: 3, state: 'wait' };
         }
 
         // Direct Interview (e.g. Non-Tech roles that don't have tasks)
-        if (intv || ini.includes('مقابلة') || ini.includes('Interview')) {
-            return { class: 'status-interview', icon: 'fa-comments', label: 'Invited for Interview', pipeline: 3, state: 'active' };
+        if (ini.includes('مقابلة') || ini.includes('Interview')) {
+            return { class: 'status-interview', icon: 'fa-calendar-check', label: 'Invited for Interview', pipeline: 3, state: 'active' };
         }
 
         // Final Acceptance
         if (ini === 'مقبول نهائي' || (ini.includes('مقبول') && (tsk === 'قُبل التاسك' || !tsk) && !ini.includes('مبدئي'))) {
-            if (!tsk && !intv && !ini.includes('نهائي')) {
+            if (!tsk && !ini.includes('نهائي')) {
                 return { class: 'status-task-sent', icon: 'fa-hourglass-start', label: 'Initially Accepted (Awaiting Tasks)', pipeline: 2, state: 'active' };
             }
             return { class: 'status-accepted', icon: 'fa-check-double', label: 'Officially Accepted to the Core Team!', pipeline: 4, state: 'success' };
         }
 
         if (!tsk) {
-             // If Non-Tech and no tasks, they are waiting for interview
              if (app.type === 'Non-Tech') {
-                 return { class: 'status-accepted', icon: 'fa-hourglass-start', label: 'Initially Accepted (Awaiting Interview Schedule)', pipeline: 2, state: 'active' };
+                 return { class: 'status-accepted', icon: 'fa-hourglass-half', label: 'Initially Accepted (Awaiting Interview Schedule)', pipeline: 2, state: 'active' };
              }
              return { class: 'status-task-sent', icon: 'fa-hourglass-start', label: 'Initially Accepted (Awaiting Tasks)', pipeline: 2, state: 'active' };
         }
@@ -325,14 +394,59 @@ function renderResults(results) {
         else if (s.class === 'status-waitlist') card.style.borderTop = "3px solid var(--g-yellow)";
 
         let interviewHtml = '';
-        if (app.interviewTime && (s.class === 'status-interview' || s.class === 'status-accepted' || s.state === 'wait')) {
+        const hasInterview = Boolean(app.interviewTime || app.isScheduled);
+        if (hasInterview && (s.class === 'status-interview' || s.class === 'status-accepted' || s.state === 'wait' || s.pipeline >= 3)) {
+            const dateDisplay = formatInterviewDateTime(app.interviewTime);
+            const interviewerDisplay = app.interviewer ? (app.interviewer.startsWith('Eng.') ? app.interviewer : 'Eng. ' + app.interviewer) : 'Eng. GDGoC Technical Team';
+
             interviewHtml = `
-                <div class="interview-alert">
-                    <div class="icon-wrapper"><i class="fa-solid fa-bell"></i></div>
-                    <div class="alert-content">
-                        <p>Your Interview Schedule:</p>
-                        <strong>${app.interviewTime}</strong>
-                        <span class="sub-alert">Please be present 10 minutes prior to your time slot.</span>
+                <div class="interview-details-box">
+                    <div class="interview-header-row">
+                        <span class="interview-tag"><i class="fa-solid fa-calendar-check"></i> Confirmed Appointment</span>
+                        <span style="font-size: 11.5px; color: var(--text-dim); font-weight: 600;">GDGoC Core Team 2026/2027</span>
+                    </div>
+
+                    <div class="interview-time-display">
+                        <div class="interview-time-icon"><i class="fa-solid fa-clock"></i></div>
+                        <div class="interview-time-text">
+                            <span class="interview-time-label">Date & Time</span>
+                            <span class="interview-time-value">${dateDisplay}</span>
+                        </div>
+                    </div>
+
+                    <div class="interview-meta-grid">
+                        <div class="interview-meta-item">
+                            <span class="interview-meta-title"><i class="fa-solid fa-user-tie"></i> Interviewer</span>
+                            <span class="interview-meta-val">${interviewerDisplay}</span>
+                        </div>
+                        <div class="interview-meta-item">
+                            <span class="interview-meta-title"><i class="fa-solid fa-layer-group"></i> Committee</span>
+                            <span class="interview-meta-val">${app.committee || '-'}</span>
+                        </div>
+                        ${app.role ? `
+                        <div class="interview-meta-item">
+                            <span class="interview-meta-title"><i class="fa-solid fa-id-badge"></i> Role</span>
+                            <span class="interview-meta-val">${app.role}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    ${app.interviewNotes ? `
+                    <div class="interview-notes-bar">
+                        <strong><i class="fa-solid fa-circle-info"></i> Notes:</strong> ${app.interviewNotes}
+                    </div>
+                    ` : ''}
+
+                    ${renderPrepGuide(app)}
+
+                    <div class="checklist-box">
+                        <div class="checklist-title"><i class="fa-solid fa-list-check"></i> Interview Day Checklist</div>
+                        <div class="checklist-grid">
+                            <div class="checklist-item"><i class="fa-regular fa-clock"></i> Join 10 minutes early</div>
+                            <div class="checklist-item"><i class="fa-solid fa-wifi"></i> Stable internet & mic</div>
+                            <div class="checklist-item"><i class="fa-regular fa-file-powerpoint"></i> Presentation / tasks ready</div>
+                            <div class="checklist-item"><i class="fa-regular fa-face-smile"></i> Stay confident & clear</div>
+                        </div>
                     </div>
                 </div>
             `;
