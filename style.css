@@ -1721,3 +1721,163 @@ footer { text-align: center; padding: 20px; color: var(--text-muted); font-size:
   animation: fadeIn 0.3s ease;
 }
 
+/* ════════════════════════════════════════════════════
+   Final Acceptance & Alternative Role Banner Styles
+   ════════════════════════════════════════════════════ */
+.final-acceptance-banner {
+  background: linear-gradient(135deg, rgba(52, 168, 83, 0.12) 0%, rgba(66, 133, 244, 0.12) 100%);
+  border: 1.5px solid rgba(52, 168, 83, 0.4);
+  border-radius: 16px;
+  padding: 20px 22px;
+  margin: 18px 0;
+  box-shadow: 0 8px 24px rgba(52, 168, 83, 0.15);
+  animation: fadeIn 0.5s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.final-acceptance-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 120px;
+  height: 100%;
+  background: radial-gradient(circle, rgba(52, 168, 83, 0.2) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.acceptance-banner-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.acceptance-icon-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #34a853, #1e7e34);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(52, 168, 83, 0.4);
+}
+
+.acceptance-title-wrap h4 {
+  margin: 0;
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #fff;
+  font-family: 'Outfit', 'Cairo', sans-serif;
+  line-height: 1.3;
+}
+
+.acceptance-pill-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(52, 168, 83, 0.25);
+  color: #86efac;
+  border: 1px solid rgba(52, 168, 83, 0.45);
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-bottom: 4px;
+}
+
+.acceptance-message {
+  font-size: 13.5px;
+  color: var(--text-main);
+  line-height: 1.6;
+  margin-bottom: 14px;
+  font-family: 'Outfit', 'Cairo', sans-serif;
+}
+
+.final-roles-display {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.final-role-item {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.final-role-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.final-role-val {
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  font-family: 'Outfit', 'Cairo', sans-serif;
+}
+
+.final-role-val.highlight {
+  color: #86efac;
+}
+
+.alt-role-callout {
+  background: rgba(66, 133, 244, 0.15);
+  border-left: 4px solid var(--g-blue);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #bfdbfe;
+  font-family: 'Outfit', 'Cairo', sans-serif;
+}
+
+.alt-role-callout i {
+  color: var(--g-blue);
+  font-size: 15px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.acceptance-next-steps {
+  background: rgba(251, 188, 5, 0.12);
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  color: #fde047;
+  font-family: 'Outfit', 'Cairo', sans-serif;
+  line-height: 1.5;
+}
+
+.acceptance-next-steps i {
+  font-size: 15px;
+  flex-shrink: 0;
+  color: var(--g-yellow);
+}
+

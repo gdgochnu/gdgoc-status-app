@@ -126,12 +126,54 @@ function clearCache(nid) {
     } catch(e) {}
 }
 
+// Global Publish Status for Interview Decisions (Controlled by Admin Panel)
+let isGlobalResultsPublished = false;
+
+async function checkGlobalPublishStatus() {
+    try {
+        const sbUrl = `${SUPABASE_CONFIG.URL}/rest/v1/realtime_status?email=eq.__SYSTEM_SETTINGS__&select=status,updated_at`;
+        const sbRes = await fetch(sbUrl, {
+            headers: {
+                'apikey': SUPABASE_CONFIG.ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_CONFIG.ANON_KEY}`
+            }
+        });
+        if (sbRes.ok) {
+            const rows = await sbRes.json();
+            if (Array.isArray(rows) && rows.length > 0) {
+                isGlobalResultsPublished = (rows[0].status === 'PUBLISHED');
+                return isGlobalResultsPublished;
+            }
+        }
+    } catch (sbErr) {
+        console.warn('Supabase checkGlobalPublishStatus error:', sbErr);
+    }
+
+    try {
+        const masterRes = await fetch(`${MASTER_API_URL}?action=getPublishSettings`);
+        if (masterRes.ok) {
+            const data = await masterRes.json();
+            isGlobalResultsPublished = Boolean(data.isPublished);
+            return isGlobalResultsPublished;
+        }
+    } catch (err) {
+        console.warn('Master API checkGlobalPublishStatus error:', err);
+    }
+
+    isGlobalResultsPublished = false;
+    return false;
+}
+
+// Global Fetch with Multi-Source Fallback (Supabase -> Master API -> Direct Form API)
 async function fetchStudentApplications(nationalId) {
     const cleanNid = nationalId.trim();
     const cached = getCachedApplications(cleanNid);
     if (cached) {
         return cached;
     }
+
+    // Always fetch latest publish status before resolving applications
+    await checkGlobalPublishStatus();
 
     let applications = [];
 
@@ -149,6 +191,18 @@ async function fetchStudentApplications(nationalId) {
             if (Array.isArray(rawList) && rawList.length > 0) {
                 rawList.forEach(s => {
                     const hasInterview = Boolean(s.interview_scheduled_at && s.interview_scheduled_at !== 'Scheduled' && s.interview_scheduled_at !== '');
+                    const rawDecision = s.interview_decision || '';
+                    const hasInterviewConducted = Boolean(rawDecision || (hasInterview && s.interview_notes));
+                    
+                    let critObj = {};
+                    if (typeof s.criteria_ratings === 'string') {
+                        try { critObj = JSON.parse(s.criteria_ratings || '{}'); } catch(e){}
+                    } else if (typeof s.criteria_ratings === 'object' && s.criteria_ratings) {
+                        critObj = s.criteria_ratings;
+                    }
+                    const offRole = (critObj && critObj.offeredRole) || s.offered_role || s.offeredRole || '';
+                    const offTrack = (critObj && critObj.offeredTrack) || s.offered_track || s.offeredTrack || '';
+
                     applications.push({
                         nationalId: s.nid || cleanNid,
                         scheduleId: s.schedule_id || '',
@@ -157,6 +211,8 @@ async function fetchStudentApplications(nationalId) {
                         email: s.email || '',
                         committee: cleanCandidateText(s.track) || 'General Track',
                         role: cleanCandidateText(s.role) || null,
+                        offeredRole: offRole,
+                        offeredTrack: offTrack,
                         initialStatus: s.task_status ? 'مقبول' : 'قيد المراجعة',
                         taskStatus: s.task_status || '',
                         taskNotes: s.task_review_notes || '',
@@ -164,7 +220,8 @@ async function fetchStudentApplications(nationalId) {
                         interviewer: s.assigned_interviewer ? formatInterviewerTitle(s.assigned_interviewer) : null,
                         interviewerEmail: s.interviewer_email || '',
                         interviewNotes: s.interview_notes || '',
-                        interviewDecision: s.interview_decision || '',
+                        interviewDecision: isGlobalResultsPublished ? rawDecision : '',
+                        resultsPending: !isGlobalResultsPublished && hasInterviewConducted,
                         isScheduled: hasInterview,
                         attendanceStatus: s.attendance_status || 'Pending',
                         attendanceConfirmedAt: s.attendance_confirmed_at || '',
@@ -192,6 +249,18 @@ async function fetchStudentApplications(nationalId) {
 
                 rawList.forEach(s => {
                     const hasInterview = Boolean(s.interviewScheduledAt && s.interviewScheduledAt !== 'Scheduled' && s.interviewScheduledAt !== '');
+                    const rawDecision = s.interviewDecision || '';
+                    const hasInterviewConducted = Boolean(rawDecision || (hasInterview && s.interviewNotes));
+
+                    let critObj = {};
+                    if (typeof s.criteriaScores === 'object' && s.criteriaScores) {
+                        critObj = s.criteriaScores;
+                    } else if (typeof s.criteria_ratings === 'object' && s.criteria_ratings) {
+                        critObj = s.criteria_ratings;
+                    }
+                    const offRole = (critObj && critObj.offeredRole) || s.offeredRole || s.offered_role || '';
+                    const offTrack = (critObj && critObj.offeredTrack) || s.offeredTrack || s.offered_track || '';
+
                     applications.push({
                         nationalId: s.nid || cleanNid,
                         scheduleId: s.scheduleId || '',
@@ -200,6 +269,8 @@ async function fetchStudentApplications(nationalId) {
                         email: s.email || '',
                         committee: cleanCandidateText(s.track) || 'General Track',
                         role: cleanCandidateText(s.role) || null,
+                        offeredRole: offRole,
+                        offeredTrack: offTrack,
                         initialStatus: s.taskStatus ? 'مقبول' : 'قيد المراجعة',
                         taskStatus: s.taskStatus || '',
                         taskNotes: s.taskReviewNotes || '',
@@ -207,7 +278,8 @@ async function fetchStudentApplications(nationalId) {
                         interviewer: s.assignedInterviewer ? formatInterviewerTitle(s.assignedInterviewer) : null,
                         interviewerEmail: s.interviewerEmail || '',
                         interviewNotes: s.interviewNotes || '',
-                        interviewDecision: s.interviewDecision || '',
+                        interviewDecision: isGlobalResultsPublished ? rawDecision : '',
+                        resultsPending: !isGlobalResultsPublished && hasInterviewConducted,
                         isScheduled: hasInterview,
                         attendanceStatus: s.attendanceStatus || 'Pending',
                         attendanceConfirmedAt: s.attendanceConfirmedAt || '',
@@ -220,7 +292,7 @@ async function fetchStudentApplications(nationalId) {
         }
     }
 
-    // 2. Fallback to raw form response API ONLY if no applications were found in the master database
+    // 3. Fallback to raw form response API ONLY if no applications were found in the master database
     if (applications.length === 0) {
         try {
             const fallbackResponse = await fetch(`${API_URL}?nid=${encodeURIComponent(cleanNid)}`);
@@ -234,6 +306,8 @@ async function fetchStudentApplications(nationalId) {
                         committee: cleanCandidateText(app.committee),
                         role: cleanCandidateText(app.role),
                         interviewer: app.interviewer ? formatInterviewerTitle(app.interviewer) : null,
+                        interviewDecision: isGlobalResultsPublished ? (app.interviewDecision || '') : '',
+                        resultsPending: !isGlobalResultsPublished && Boolean(app.interviewDecision),
                         isScheduled: Boolean(app.interviewTime && app.interviewTime !== ''),
                         attendanceStatus: app.attendanceStatus || 'Pending',
                         attendanceConfirmedAt: app.attendanceConfirmedAt || '',
@@ -778,7 +852,7 @@ function parseStatus(app) {
     let ini = app.initialStatus || 'قيد المراجعة';
     let tsk = app.taskStatus || '';
     let intv = app.interviewTime || '';
-    let decision = app.interviewDecision || '';
+    let decision = (isGlobalResultsPublished ? app.interviewDecision : '') || '';
 
     // Default: Pending at Stage 1
     let s = { class: 'status-pending', icon: 'fa-spinner fa-spin-pulse', label: 'Under Initial Review', pipeline: 1, state: 'active' };
@@ -793,19 +867,31 @@ function parseStatus(app) {
         return { class: 'status-waitlist', icon: 'fa-hourglass-half', label: 'Waitlisted', pipeline: 1, state: 'wait' };
     }
     
-    // Final Interview Decisions override everything else
-    if (decision === 'مقبول' || decision === 'مقبول نهائي' || ini === 'مقبول نهائي') {
-        return { class: 'status-accepted', icon: 'fa-check-double', label: 'Officially Accepted to the Core Team!', pipeline: 4, state: 'success' };
-    }
-    if (decision === 'مرفوض') {
-        return { class: 'status-rejected', icon: 'fa-ban', label: 'Rejected (Post-Interview)', pipeline: 3, state: 'fail', rejectMsg: true };
-    }
-    if (decision.includes('انتظار')) {
-        return { class: 'status-waitlist', icon: 'fa-hourglass-half', label: 'Waitlisted (Post-Interview)', pipeline: 3, state: 'wait' };
+    // Final Interview Decisions override everything else ONLY WHEN PUBLISHED
+    if (isGlobalResultsPublished && decision) {
+        if (decision === 'مقبول' || decision === 'مقبول نهائي' || ini === 'مقبول نهائي') {
+            return { class: 'status-accepted', icon: 'fa-check-double', label: 'Officially Accepted to the Core Team!', pipeline: 4, state: 'success' };
+        }
+        if (decision === 'مرفوض') {
+            return { class: 'status-rejected', icon: 'fa-ban', label: 'Rejected (Post-Interview)', pipeline: 3, state: 'fail', rejectMsg: true };
+        }
+        if (decision.includes('انتظار')) {
+            return { class: 'status-waitlist', icon: 'fa-hourglass-half', label: 'Waitlisted (Post-Interview)', pipeline: 3, state: 'wait' };
+        }
     }
 
-    // 2. Scheduled Interview
+    // 2. Scheduled Interview & Post-Interview Deliberation
     if (intv || app.isScheduled) {
+        if (!isGlobalResultsPublished && app.resultsPending) {
+            return { 
+                class: 'status-interview', 
+                icon: 'fa-clipboard-check', 
+                label: 'Interview Completed (Under Deliberation)', 
+                pipeline: 3, 
+                state: 'wait',
+                postInterviewPending: true 
+            };
+        }
         return { class: 'status-interview', icon: 'fa-calendar-check', label: 'Interview Scheduled', pipeline: 3, state: 'active' };
     }
 
@@ -1156,6 +1242,69 @@ function renderResults(results) {
         }
         pipeHtml += '</div>';
 
+        let postInterviewBannerHtml = '';
+        if (s.postInterviewPending) {
+            postInterviewBannerHtml = `
+                <div class="post-interview-review-alert" style="background: linear-gradient(135deg, rgba(66, 133, 244, 0.12) 0%, rgba(168, 85, 247, 0.12) 100%); border: 1px solid rgba(66, 133, 244, 0.35); border-radius: 14px; padding: 16px 20px; margin: 16px 0; display: flex; align-items: center; gap: 16px; animation: fadeIn 0.4s ease;">
+                    <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(66, 133, 244, 0.25); display: flex; align-items: center; justify-content: center; color: var(--g-blue); font-size: 20px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(66, 133, 244, 0.2);">
+                        <i class="fa-solid fa-hourglass-half fa-spin"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <h4 style="margin: 0 0 4px; font-size: 15px; font-weight: 800; color: #fff; font-family: 'Outfit', 'Cairo', sans-serif;">
+                            المقابلة تمت بنجاح • النتائج النهائية قيد المراجعة والاعتماد
+                        </h4>
+                        <p style="margin: 0; font-size: 13px; color: var(--text-dim); line-height: 1.5; font-family: 'Outfit', 'Cairo', sans-serif;">
+                            Interview Completed &mdash; Your evaluation has been recorded and is currently undergoing executive committee deliberation. Final decisions will be announced here once officially published by leadership.
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        let acceptanceBannerHtml = '';
+        if (s.class === 'status-accepted' && isGlobalResultsPublished) {
+            const finalRole = app.offeredRole || app.role || 'Core Team Member';
+            const finalTrack = app.offeredTrack || app.committee || 'Core Team';
+            const isAltered = Boolean(app.offeredRole && app.role && app.offeredRole.toLowerCase() !== app.role.toLowerCase());
+
+            acceptanceBannerHtml = `
+                <div class="final-acceptance-banner">
+                    <div class="acceptance-banner-header">
+                        <div class="acceptance-icon-badge">
+                            <i class="fa-solid fa-trophy"></i>
+                        </div>
+                        <div class="acceptance-title-wrap">
+                            <span class="acceptance-pill-tag"><i class="fa-solid fa-sparkles"></i> Official Selection</span>
+                            <h4>🎉 أهلاً بك في فريق Google Developer Groups on Campus!</h4>
+                        </div>
+                    </div>
+                    <p class="acceptance-message">
+                        يسر لجنة الاختيار والتقييم إعلامك بقبولك رسمياً للانضمام إلى <strong>فريق العمل (Core Team 2026/2027)</strong> بجامعة حلوان الأهلية:
+                    </p>
+                    <div class="final-roles-display">
+                        <div class="final-role-item">
+                            <span class="final-role-label"><i class="fa-solid fa-user-shield"></i> الدور المعتمد (Accepted Role)</span>
+                            <span class="final-role-val highlight">${finalRole}</span>
+                        </div>
+                        <div class="final-role-item">
+                            <span class="final-role-label"><i class="fa-solid fa-layer-group"></i> التراك / اللجنة (Accepted Track)</span>
+                            <span class="final-role-val">${finalTrack}</span>
+                        </div>
+                    </div>
+                    ${isAltered ? `
+                    <div class="alt-role-callout">
+                        <i class="fa-solid fa-arrows-split-up-and-left"></i>
+                        <span><strong>ملاحظة اللجنة:</strong> بناءً على نقاط قوتك وأدائك المتميز في المقابلة الشخصية، تم توجيه قبولك لدور <strong>${finalRole}</strong> لتقديم أفضل أثر وتكامل مع الفريق.</span>
+                    </div>
+                    ` : ''}
+                    <div class="acceptance-next-steps">
+                        <i class="fa-solid fa-bullhorn"></i>
+                        <span>برجاء مراجعة بريدك الإلكتروني قريباً للحصول على رابط مجموعة الواتساب الخاصة بالفريق ومواعيد جلسة الأونبوردنج (Onboarding Session).</span>
+                    </div>
+                </div>
+            `;
+        }
+
         card.innerHTML = `
             ${easterEggHtml}
             <div class="card-header">
@@ -1178,6 +1327,8 @@ function renderResults(results) {
                     <span class="info-value">${app.committee}</span>
                 </div>
                 ${roleHtml}
+                ${acceptanceBannerHtml}
+                ${postInterviewBannerHtml}
                 ${interviewHtml}
                 ${rejectionHtml}
                 ${missingTaskHtml}

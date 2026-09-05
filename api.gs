@@ -135,7 +135,15 @@ function searchCentralStudents_(searchId) {
         var finalInterviewTime = (matchedSched && matchedSched.scheduledAt) ? matchedSched.scheduledAt : (schedAt || null);
         var finalInterviewer = (matchedSched && matchedSched.interviewer) ? matchedSched.interviewer : (interviewer || null);
         var finalNotes = (matchedSched && matchedSched.notes) ? matchedSched.notes : (intvNotes || '');
-        var finalDecision = (matchedSched && matchedSched.decision) ? matchedSched.decision : (decision || '');
+        
+        // Final interview decision is only exposed if officially published by admin
+        var isPublished = false;
+        try {
+          isPublished = PropertiesService.getScriptProperties().getProperty('PUBLISH_FINAL_RESULTS') === 'true';
+        } catch(pErr) {}
+
+        var rawDecision = (matchedSched && matchedSched.decision) ? matchedSched.decision : (decision || '');
+        var finalDecision = isPublished ? rawDecision : '';
 
         matches.push({
           type: type,
@@ -151,6 +159,7 @@ function searchCentralStudents_(searchId) {
           interviewerEmail: (matchedSched && matchedSched.interviewerEmail) ? matchedSched.interviewerEmail : interviewerEmail,
           interviewNotes: finalNotes,
           interviewDecision: finalDecision,
+          isResultsPublished: isPublished,
           isScheduled: Boolean(finalInterviewTime && finalInterviewTime !== 'Scheduled' && finalInterviewTime !== '')
         });
       }
