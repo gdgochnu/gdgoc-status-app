@@ -76,50 +76,28 @@ function formatInterviewerTitle(name) {
     return 'Eng. ' + raw;
 }
 
-// Persistent Multi-Tier Client Cache (In-Memory + SessionStorage + LocalStorage)
-const searchCache = new Map();
-
-const CACHE_TTL_SCHEDULED   = 90 * 1000;  // 90 seconds – interview already scheduled, data won't change often
-const CACHE_TTL_UNSCHEDULED = 0;           // Never cache – student may get scheduled at any moment
-
-function getCachedApplications(nid) {
-    if (searchCache.has(nid)) {
-        const mem = searchCache.get(nid);
-        // If none of the applications have an interview scheduled, never serve from cache
-        const anyScheduled = mem && mem.some(a => a.isScheduled);
-        if (!anyScheduled) return null;
-        return mem;
-    }
+// Purge any stale client cache keys from localStorage / sessionStorage
+(function purgeLegacyCaches() {
     try {
-        const stored = sessionStorage.getItem('gdgoc_app_cache_' + nid) || localStorage.getItem('gdgoc_app_cache_' + nid);
-        if (stored) {
-            const parsed = JSON.parse(stored);
-            const anyScheduled = parsed.apps && parsed.apps.some(a => a.isScheduled);
-            if (!anyScheduled) {
-                // Clear stale no-interview cache so the next fetch is always live
-                clearCache(nid);
-                return null;
-            }
-            if (Date.now() - parsed.ts < CACHE_TTL_SCHEDULED) {
-                searchCache.set(nid, parsed.apps);
-                return parsed.apps;
-            }
-        }
+        Object.keys(localStorage).forEach(k => {
+            if (k.startsWith('gdgoc_app_cache_')) localStorage.removeItem(k);
+        });
+        Object.keys(sessionStorage).forEach(k => {
+            if (k.startsWith('gdgoc_app_cache_')) sessionStorage.removeItem(k);
+        });
     } catch(e) {}
-    return null;
+})();
+
+// Pure Live Data Access (No Caching - Always Fresh From Database)
+function getCachedApplications(nid) {
+    return null; // Always bypass cache to get real-time fresh schedule updates
 }
 
 function setCachedApplications(nid, apps) {
-    searchCache.set(nid, apps);
-    try {
-        const payload = JSON.stringify({ ts: Date.now(), apps: apps });
-        sessionStorage.setItem('gdgoc_app_cache_' + nid, payload);
-        localStorage.setItem('gdgoc_app_cache_' + nid, payload);
-    } catch(e) {}
+    // No-op: caching disabled so all status checks fetch live data
 }
 
 function clearCache(nid) {
-    searchCache.delete(nid);
     try {
         sessionStorage.removeItem('gdgoc_app_cache_' + nid);
         localStorage.removeItem('gdgoc_app_cache_' + nid);
@@ -167,10 +145,6 @@ async function checkGlobalPublishStatus() {
 // Global Fetch with Multi-Source Fallback (Supabase -> Master API -> Direct Form API)
 async function fetchStudentApplications(nationalId) {
     const cleanNid = nationalId.trim();
-    const cached = getCachedApplications(cleanNid);
-    if (cached) {
-        return cached;
-    }
 
     // Always fetch latest publish status before resolving applications
     await checkGlobalPublishStatus();
@@ -320,10 +294,6 @@ async function fetchStudentApplications(nationalId) {
         }
     }
 
-    if (applications.length > 0) {
-        setCachedApplications(cleanNid, applications);
-    }
-
     return applications;
 }
 
@@ -437,14 +407,6 @@ form.addEventListener('submit', async (e) => {
 
     if (API_URL === "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE") {
         showError("⚠️ API URL is not set. Please update API_URL in main.js.");
-        return;
-    }
-
-    // Instant zero-delay cache hit check
-    const cached = getCachedApplications(nationalId);
-    if (cached) {
-        renderResults(cached);
-        localStorage.setItem('gdgoc_saved_nid', nationalId);
         return;
     }
 
@@ -1461,19 +1423,8 @@ window.confirmCandidateAttendance = async function(nid, type, scheduleId, status
 
         SoundFX.playSuccess();
 
-        // Update in-memory & persistent cache
-        const list = getCachedApplications(nid);
-        if (list && Array.isArray(list)) {
-            const found = list.find(a => (a.type || '').toLowerCase() === (type || '').toLowerCase()) || list[0];
-            if (found) {
-                found.attendanceStatus = status;
-                found.attendanceConfirmedAt = nowIso;
-                setCachedApplications(nid, list);
-            }
-        }
-
-            // Morph card into updated state
-            if (cardEl) {
+        // Morph card into updated state
+        if (cardEl) {
                 cardEl.className = status === 'Confirmed' ? 'attendance-card confirmed' : 'attendance-card declined';
                 if (status === 'Confirmed') {
                     cardEl.innerHTML = `
